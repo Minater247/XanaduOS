@@ -1,0 +1,2 @@
+- figure out why the .h files weren't working with the inline assembly functions
+- move the cursor functions to their appropriate locations
