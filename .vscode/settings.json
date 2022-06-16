@@ -4,6 +4,7 @@
         "stdbool.h": "c",
         "string.h": "c",
         "stdio.h": "c",
-        "tty.h": "c"
+        "tty.h": "c",
+        "stdint.h": "c"
     }
 }
