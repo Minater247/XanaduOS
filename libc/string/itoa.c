@@ -33,6 +33,8 @@ int itoa(int value, char *sp, int radix)
 
     while (tp > tmp)
         *sp++ = *--tp;
+    
+    *sp = '\0';
 
     return len;
 }
