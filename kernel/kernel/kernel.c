@@ -1,9 +1,15 @@
 #include <stdio.h>
+#include <string.h>
 
 #include <kernel/tty.h>
 
 void kernel_main(void) {
 	terminal_initialize();
-	printf("Hello, kernel World!\n");
-	printf("This should print on line 2.\n");
+	for (int i=0; i < 30; i++) {
+		printf("Line ");
+		char int_str[15];
+		itoa(i, int_str, 10);
+		printf(int_str);
+		printf("\n");
+	}
 }
