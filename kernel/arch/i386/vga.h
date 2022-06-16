@@ -2,6 +2,7 @@
 #define ARCH_I386_VGA_H
 
 #include <stdint.h>
+#include "asmfuncs.c"
 
 enum vga_color {
 	VGA_COLOR_BLACK = 0,
@@ -28,6 +29,21 @@ static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg) {
 
 static inline uint16_t vga_entry(unsigned char uc, uint8_t color) {
 	return (uint16_t) uc | (uint16_t) color << 8;
+}
+
+void enable_cursor(uint8_t cursor_start, uint8_t cursor_end)
+{
+	outb(0x3D4, 0x0A);
+	outb(0x3D5, (inb(0x3D5) & 0xC0) | cursor_start);
+ 
+	outb(0x3D4, 0x0B);
+	outb(0x3D5, (inb(0x3D5) & 0xE0) | cursor_end);
+}
+
+void disable_cursor()
+{
+	outb(0x3D4, 0x0A);
+	outb(0x3D5, 0x20);
 }
 
 #endif
