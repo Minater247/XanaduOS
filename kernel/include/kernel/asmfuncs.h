@@ -2,9 +2,11 @@
 #define _ASMFUNCS_H_
 
 #include <stdint.h>
-#include "../../arch/i386/asmfuncs.c" //the linker fails if I don't do this so I guess this is what we do now!
+#include "../../arch/i386/asmfuncs.c" //temporary hack until we need to port this to other architectures (include wasn't working for an unknown reason)
 
 inline void outb(uint16_t port, uint8_t val);
 inline uint8_t inb(uint16_t port);
+inline int check_CPUID();
+inline void get_processor_vendor(char *vendor);
 
 #endif

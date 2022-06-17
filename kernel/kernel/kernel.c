@@ -7,12 +7,13 @@
 
 void kernel_main(void) {
 	terminal_initialize();
-	for (int i=0; i < 30; i++) {
-		printf("Line ");
-		char int_str[15];
-		itoa(i, int_str, 10);
-		printf(int_str);
-		printf("\n");
+	int CPUID_available = check_CPUID();
+	if (CPUID_available) {
+		printf("CPUID is available.\n");
+	} else {
+		printf("CPUID is not available.\n");
 	}
-	move_cursor(5, 5);
+	char vendor[13];
+	get_processor_vendor(vendor);
+	printf("Processor vendor: %s\n", vendor);
 }
