@@ -7,7 +7,6 @@
 
 void kernel_main(void) {
 	terminal_initialize();
-	disable_cursor();
 	for (int i=0; i < 30; i++) {
 		printf("Line ");
 		char int_str[15];
@@ -15,4 +14,5 @@ void kernel_main(void) {
 		printf(int_str);
 		printf("\n");
 	}
+	move_cursor(5, 5);
 }

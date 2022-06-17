@@ -5,10 +5,14 @@
 
 #include <kernel/tty.h>
 
+#ifndef VGA_WIDTH
+#define VGA_WIDTH 80
+#define VGA_HEIGHT 25
+#endif
+
+
 #include "vga.h"
 
-static const size_t VGA_WIDTH = 80;
-static const size_t VGA_HEIGHT = 25;
 static uint16_t* const VGA_MEMORY = (uint16_t*) 0xB8000;
 
 static size_t terminal_row;
