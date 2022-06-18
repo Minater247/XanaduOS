@@ -8,5 +8,7 @@ inline void outb(uint16_t port, uint8_t val);
 inline uint8_t inb(uint16_t port);
 inline int check_CPUID();
 inline void get_processor_vendor(char *vendor);
+inline int long_mode_available();
+inline int check_a20_gate();
 
 #endif

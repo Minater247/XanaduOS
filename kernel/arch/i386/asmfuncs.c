@@ -64,3 +64,19 @@ inline void get_processor_vendor(char *vendor)
     vendor[12] = '\0';
 }
 
+inline int long_mode_available()
+{
+    uint32_t eax, ebx, ecx, edx;
+    uint32_t op = 0x80000000;
+    cpuid(op, &eax, &ebx, &ecx, &edx);
+    return (eax >= 0x80000001);
+}
+
+/*
+
+    Check whether the a20 gate is enabled
+
+*/
+inline int check_a20_gate()
+{
+}
