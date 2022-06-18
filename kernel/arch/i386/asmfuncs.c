@@ -76,7 +76,45 @@ inline int long_mode_available()
 
     Check whether the a20 gate is enabled
 
+
+    Assembly code to use:
+
+    pushad
+    mov 0x112345, %edi
+    mov 0x012345, %esi
+    mov %esi, (%esi)
+    mov %edi, (%edi)
+    cmpsd
+    popad
+    jne a20_gate_not_enabled
+    a20_gate_enabled:
+    mov $1, %eax
+    jmp a20_gate_done
+    a20_gate_not_enabled:
+    mov $0, %eax
+    a20_gate_done:
+    ret
+
 */
 inline int check_a20_gate()
 {
+    uint32_t eax, ebx;
+    asm volatile ( "pushal\n\t"
+                   "mov 0x112345, %%edi\n\t"
+                   "mov 0x012345, %%esi\n\t"
+                   "mov %%esi, (%%esi)\n\t"
+                   "mov %%edi, (%%edi)\n\t"
+                   "cmpsd\n\t"
+                   "popal\n\t"
+                   "jne a20_gate_not_enabled\n\t"
+                   "a20_gate_enabled:\n\t"
+                   "mov $1, %%eax\n\t"
+                   "jmp a20_gate_done\n\t"
+                   "a20_gate_not_enabled:\n\t"
+                   "mov $0, %%eax\n\t"
+                   "a20_gate_done:"
+                   : "=r"(eax), "=r"(ebx)
+                   :
+                   : "cc" );
+    return eax;
 }
