@@ -53,7 +53,7 @@ $(ARCHDIR)/crtn.o \
 all: xanaduos.kernel
 
 xanaduos.kernel: $(OBJS) $(ARCHDIR)/linker.ld
-	$(CC) -T $(ARCHDIR)/linker.ld -o $@ $(CFLAGS) $(LINK_LIST)
+	$(CC) -T $(ARCHDIR)/linker.ld -o $@ $(CFLAGS) $(KERNEL_ARCH_ASM_OBJS) $(LINK_LIST)
 	grub-file --is-x86-multiboot xanaduos.kernel
 
 $(ARCHDIR)/crtbegin.o $(ARCHDIR)/crtend.o:
@@ -64,6 +64,9 @@ $(ARCHDIR)/crtbegin.o $(ARCHDIR)/crtend.o:
 
 .S.o:
 	$(CC) -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
+
+%.o : %.asm
+	nasm -f coff $< -o $@
 
 clean:
 	rm -f xanaduos.kernel

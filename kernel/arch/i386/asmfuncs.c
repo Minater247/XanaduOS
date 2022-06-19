@@ -76,45 +76,226 @@ inline int long_mode_available()
 
     Check whether the a20 gate is enabled
 
+    The a20 gate is disabled if the ax register is 0, enabled if it is 1.
 
     Assembly code to use:
 
-    pushad
-    mov 0x112345, %edi
-    mov 0x012345, %esi
-    mov %esi, (%esi)
-    mov %edi, (%edi)
-    cmpsd
-    popad
-    jne a20_gate_not_enabled
-    a20_gate_enabled:
-    mov $1, %eax
-    jmp a20_gate_done
-    a20_gate_not_enabled:
-    mov $0, %eax
-    a20_gate_done:
-    ret
+    .intel_syntax noprefix
+    check_a20:
+        pushf
+        push ds
+        push es
+        push di
+        push si
+    
+        cli
+    
+        xor ax, ax ; ax = 0
+        mov es, ax
+    
+        not ax ; ax = 0xFFFF
+        mov ds, ax
+    
+        mov di, 0x0500
+        mov si, 0x0510
+    
+        mov al, byte [es:di]
+        push ax
+    
+        mov al, byte [ds:si]
+        push ax
+    
+        mov byte [es:di], 0x00
+        mov byte [ds:si], 0xFF
+    
+        cmp byte [es:di], 0xFF
+    
+        pop ax
+        mov byte [ds:si], al
+    
+        pop ax
+        mov byte [es:di], al
+    
+        mov ax, 0
+        je check_a20__exit
+    
+        mov ax, 1
+ 
+    check_a20__exit:
+        pop si
+        pop di
+        pop es
+        pop ds
+        popf
+    
+        ret
 
 */
+//currently broken
 inline int check_a20_gate()
 {
-    uint32_t eax, ebx;
-    asm volatile ( "pushal\n\t"
-                   "mov 0x112345, %%edi\n\t"
-                   "mov 0x012345, %%esi\n\t"
-                   "mov %%esi, (%%esi)\n\t"
-                   "mov %%edi, (%%edi)\n\t"
-                   "cmpsd\n\t"
-                   "popal\n\t"
-                   "jne a20_gate_not_enabled\n\t"
-                   "a20_gate_enabled:\n\t"
-                   "mov $1, %%eax\n\t"
-                   "jmp a20_gate_done\n\t"
-                   "a20_gate_not_enabled:\n\t"
-                   "mov $0, %%eax\n\t"
-                   "a20_gate_done:"
-                   : "=r"(eax), "=r"(ebx)
-                   :
-                   : "cc" );
+    uint32_t eax, ebx, ecx, edx;
+    asm volatile (
+        ".intel_syntax noprefix\n\t"
+        "pushf\n\t"
+        "push ds\n\t"
+        "push es\n\t"
+        "push di\n\t"
+        "push si\n\t"
+        "xor ax, ax\n\t" 
+        "mov es, ax\n\t"
+        "not ax\n\t"
+        "mov ds, ax\n\t"
+        "xor ax, ax\n\t"
+        "mov di, 0x500\n\t"
+        "mov si, 0x510\n\t" 
+        "mov al, byte [es:0x500]\n\t"
+        "push ax\n\t"
+        "mov al, byte [ds:0x510]\n\t"
+        "push ax\n\t"
+        "movb byte [es:0x500], 0x00\n\t" 
+        "movb byte [ds:0x510], 0xFF\n\t" 
+        "cmpb byte [es:0x500], 0xFF\n\t" 
+        "pop ax\n\t"
+        "mov byte [ds:0x510], al\n\t"
+        "pop ax\n\t"
+        "mov byte [es:0x500], al\n\t"
+        "mov ax, 0\n\t"
+        "je check_a20__exit\n\t"
+        "mov ax, 1\n\t"
+        "check_a20__exit:\n\t"
+        "pop si\n\t"
+        "pop di\n\t"
+        "pop es\n\t"
+        "pop ds\n\t"
+        "popf\n\t"
+        ".att_syntax prefix"
+        : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx)
+        :
+        : "cc"
+    );
     return eax;
+}
+
+//load page directory
+/*
+    push %ebp
+    mov %esp, %ebp
+    mov 8(%esp), %eax
+    mov %eax, %cr3
+    mov %ebp, %esp
+    pop %eb
+*/
+inline void loadPageDirectory(uint32_t* inp) {
+    asm volatile (
+        "push %%ebp\n\t"
+        "mov %%esp, %%ebp\n\t"
+        "mov 8(%%esp), %%eax\n\t"
+        "mov %%eax, %%cr3\n\t"
+        "mov %%ebp, %%esp\n\t"
+        "pop %%ebp"
+        :
+        : "a"(inp)
+        : "cc"
+    );  //inp is the address of the page directory
+}
+
+//enable paging
+/*
+    push %ebp
+    mov %esp, %ebp
+    mov %cr0, %eax
+    or $0x80000000, %eax
+    mov %eax, %cr0
+    mov %ebp, %esp
+    pop %ebp
+*/
+inline void enablePaging() {
+    asm volatile (
+        "push %%ebp\n\t"
+        "mov %%esp, %%ebp\n\t"
+        "mov %%cr0, %%eax\n\t"
+        "or $0x80000000, %%eax\n\t"
+        "mov %%eax, %%cr0\n\t"
+        "mov %%ebp, %%esp\n\t"
+        "pop %%ebp"
+        :
+        :
+        : "cc"
+    );
+}
+
+//disable paging by setting cr0.pg to 0
+/*
+    push %ebp
+    mov %esp, %ebp
+    mov %cr0, %eax
+    and $0x7FFFFFFF, %eax
+    mov %eax, %cr0
+    mov %ebp, %esp
+    pop %ebp
+*/
+inline void disablePaging() {
+    asm volatile (
+        "push %%ebp\n\t"
+        "mov %%esp, %%ebp\n\t"
+        "mov %%cr0, %%eax\n\t"
+        "and $0x7FFFFFFF, %%eax\n\t"
+        "mov %%eax, %%cr0\n\t"
+        "mov %%ebp, %%esp\n\t"
+        "pop %%ebp"
+        :
+        :
+        : "cc"
+    );
+}
+
+//enable PAE in cr5.pae (bit 5)
+/*
+    push %ebp
+    mov %esp, %ebp
+    mov %cr4, %eax
+    or $0x20, %eax
+    mov %eax, %cr4
+    mov %ebp, %esp
+    pop %ebp
+*/
+inline void enablePAE() {
+    asm volatile (
+        "push %%ebp\n\t"
+        "mov %%esp, %%ebp\n\t"
+        "mov %%cr4, %%eax\n\t"
+        "or $0x20, %%eax\n\t"
+        "mov %%eax, %%cr4\n\t"
+        "mov %%ebp, %%esp\n\t"
+        "pop %%ebp"
+        :
+        :
+        : "cc"
+    );
+}
+
+//disable PAE in cr5.pae (bit 5)
+/*
+    push %ebp
+    mov %esp, %ebp
+    mov %cr4, %eax
+    and $0xFFFFFFDF, %eax
+    mov %eax, %cr4
+    mov %ebp, %esp
+    pop %ebp
+*/
+inline void disablePAE() {
+    asm volatile (
+        "push %%ebp\n\t"
+        "mov %%esp, %%ebp\n\t"
+        "mov %%cr4, %%eax\n\t"
+        "and $0xFFFFFFDF, %%eax\n\t"
+        "mov %%eax, %%cr4\n\t"
+        "mov %%ebp, %%esp\n\t"
+        "pop %%ebp"
+        :
+        :
+        : "cc"
+    );
 }
