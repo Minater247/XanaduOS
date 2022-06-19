@@ -8,8 +8,7 @@
 uint32_t page_directory[1024] __attribute__((aligned(4096)));
 uint32_t basic_page_table[1024] __attribute__((aligned(4096)));
 
-extern void check_a20();
-extern int a20_return;
+int check_A20();
 
 void kernel_main(void) {
 	terminal_initialize();
@@ -23,5 +22,9 @@ void kernel_main(void) {
 	get_processor_vendor(vendor);
 	printf("Processor vendor: %s\n", vendor);
 
-	check_a20();
+	if (check_A20()) {
+		printf("A20 gate is enabled.\n");
+	} else {
+		printf("A20 gate is not enabled.\n");
+	}
 }

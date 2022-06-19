@@ -1,21 +1,10 @@
-; The following code is public domain licensed
- 
-[bits 32]
- 
-; Function: check_a20
-;
-; Purpose: to check the status of the a20 line in a completely self-contained state-preserving way.
-;          The function can be modified as necessary by removing push's at the beginning and their
-;          respective pop's at the end if complete self-containment is not required.
-;
-; Returns: 0 in ax if the a20 line is disabled (memory wraps around)
-;          1 in ax if the a20 line is enabled (memory does not wrap around)
+[BITS 32]
 
-GLOBAL _check_a20
-GLOBAL _a20_return
+EXTERN a20_status
+GLOBAL check_A20
+
 SECTION .text
-
-_check_a20:
+check_A20:
     pushf
     push ds
     push es
@@ -61,7 +50,5 @@ check_a20__exit:
     pop es
     pop ds
     popf
-; move the return value to the correct register
-    mov _a20_return, ax
  
     ret

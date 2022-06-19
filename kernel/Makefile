@@ -30,6 +30,7 @@ LIBS:=$(LIBS) $(KERNEL_ARCH_LIBS)
 KERNEL_OBJS=\
 $(KERNEL_ARCH_OBJS) \
 kernel/kernel.o \
+$(KERNEL_ARCH_ASM_OBJS) \
 
 OBJS=\
 $(ARCHDIR)/crti.o \
@@ -53,7 +54,7 @@ $(ARCHDIR)/crtn.o \
 all: xanaduos.kernel
 
 xanaduos.kernel: $(OBJS) $(ARCHDIR)/linker.ld
-	$(CC) -T $(ARCHDIR)/linker.ld -o $@ $(CFLAGS) $(KERNEL_ARCH_ASM_OBJS) $(LINK_LIST)
+	$(CC) -T $(ARCHDIR)/linker.ld -o $@ $(CFLAGS) $(LINK_LIST)
 	grub-file --is-x86-multiboot xanaduos.kernel
 
 $(ARCHDIR)/crtbegin.o $(ARCHDIR)/crtend.o:
@@ -72,6 +73,7 @@ clean:
 	rm -f xanaduos.kernel
 	rm -f $(OBJS) *.o */*.o */*/*.o
 	rm -f $(OBJS:.o=.d) *.d */*.d */*/*.d
+	rm -f $(ARCHASMDIR)/*.o
 
 install: install-headers install-kernel
 
