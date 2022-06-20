@@ -5,6 +5,11 @@
 #include <kernel/tty.h>
 #include <kernel/asmfuncs.h>
 
+uint32_t page_directory[1024] __attribute__((aligned(4096)));
+uint32_t basic_page_table[1024] __attribute__((aligned(4096)));
+
+int check_A20();
+
 void kernel_main(void) {
 	terminal_initialize();
 	int CPUID_available = check_CPUID();
@@ -16,13 +21,8 @@ void kernel_main(void) {
 	char vendor[13];
 	get_processor_vendor(vendor);
 	printf("Processor vendor: %s\n", vendor);
-	if (long_mode_available()) {
-		printf("Long mode is available.\n");
-	} else {
-		printf("Long mode is not available.\n");
-	}
-	//check a20 gate
-	if (check_a20_gate()) {
+
+	if (check_A20()) {
 		printf("A20 gate is enabled.\n");
 	} else {
 		printf("A20 gate is not enabled.\n");

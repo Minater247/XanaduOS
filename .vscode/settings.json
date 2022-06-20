@@ -5,6 +5,7 @@
         "string.h": "c",
         "stdio.h": "c",
         "tty.h": "c",
-        "stdint.h": "c"
+        "stdint.h": "c",
+        "asmfuncs.h": "c"
     }
 }
