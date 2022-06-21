@@ -59,7 +59,7 @@ void idt_install(bool defaultInstall)
 {
     /* Sets the special IDT pointer up, just like in 'gdt.c' */
     idtp.limit = (sizeof (struct idt_entry) * 256) - 1;
-    idtp.base = &idt;
+    idtp.base = (unsigned int)(&idt);
 
     if (defaultInstall) {
         /* Clear out the entire IDT, initializing it to zeros */

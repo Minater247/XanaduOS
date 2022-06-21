@@ -127,31 +127,31 @@ isr9:
 ;  10: Invalid Task State Segment Exception (With Error Code!)
 isr10:
     cli
-    push byte 0
+    push byte 10
     jmp isr_common_stub
 
 ;  11: Segment Not Present Exception (With Error Code!)
 isr11:
     cli
-    push byte 0
+    push byte 11
     jmp isr_common_stub
 
 ;  12: Stack Fault Exception (With Error Code!)
 isr12:
     cli
-    push byte 0
+    push byte 12
     jmp isr_common_stub
 
 ;  13: General Protection Fault Exception (With Error Code!)
 isr13:
     cli
-    push byte 0
+    push byte 13
     jmp isr_common_stub
 
 ;  14: Page Fault Exception (With Error Code!)
 isr14:
     cli
-    push byte 0
+    push byte 14
     jmp isr_common_stub
 
 ;  15: Unknown Interrupt Exception

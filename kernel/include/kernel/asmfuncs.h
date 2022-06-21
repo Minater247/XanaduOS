@@ -2,7 +2,7 @@
 #define _ASMFUNCS_H_
 
 #include <stdint.h>
-#include "../../arch/i386/asmfuncs.c" //temporary hack until we need to port this to other architectures (include wasn't working for an unknown reason)
+#include "../../arch/i386/asmfuncs.c" //This is the only one that doesn't work without this. Don't know why. Temporary fix until we need to port to different architectures.
 
 inline void outb(uint16_t port, uint8_t val);
 inline uint8_t inb(uint16_t port);
