@@ -135,8 +135,6 @@ const char *exception_messages[] =
 
 void fault_handler(struct regs *r)
 {
-    printf("If we get here, we at least know the exception handler is working...\n");
-    for (;;);
     /* Is this a fault whose number is from 0 to 31? */
     if (r->int_no < 32)
     {

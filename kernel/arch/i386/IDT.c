@@ -61,7 +61,7 @@ void idt_install(bool defaultInstall)
     idtp.limit = (sizeof (struct idt_entry) * 256) - 1;
     idtp.base = &idt;
 
-    if (!defaultInstall) {
+    if (defaultInstall) {
         /* Clear out the entire IDT, initializing it to zeros */
         memset(&idt, 0, sizeof(struct idt_entry) * 256);
 

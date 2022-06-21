@@ -1,2 +1,3 @@
-a20 gate check and enable/disable
-Keyboard polling
+Check all the IDT functions to ensure they're working properly
+a20 gate enable
+Keyboard input
