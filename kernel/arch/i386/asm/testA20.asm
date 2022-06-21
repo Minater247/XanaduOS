@@ -5,19 +5,28 @@ GLOBAL check_A20
 
 SECTION .text
 check_A20:
-    pushf
     push ds
-    push es
-    push di
-    push si
+    xor ax, ax ; clear ax
+    not ax ; set ax to 0xFFFF
+    ;mov ds, ax
+    pop ds
+    ret ;testing. need to know why it's not working
+
+
+
+    ;pushf
+    ;push ds
+    ;push es
+    ;push di
+    ;push si
  
-    cli
+    ;cli
  
-    xor ax, ax ; ax = 0
-    mov es, ax
+    ;xor ax, ax ; ax = 0
+    ;mov es, ax
  
-    not ax ; ax = 0xFFFF
-    mov ds, ax
+    ;not ax ; ax = 0xFFFF
+    ;mov ds, ax
  
 ;    mov di, 0x0500
 ;    mov si, 0x0510
@@ -45,10 +54,10 @@ check_A20:
 ;    mov ax, 1
 ; 
 ;check_a20__exit:
-    pop si
-    pop di
-    pop es
-    pop ds
-    popf
+    ;pop si
+    ;pop di
+    ;pop es
+    ;pop ds
+    ;popf
  
-    ret
+    ;ret

@@ -33,6 +33,7 @@ struct idt_ptr idtp;
 
 /* This exists in 'start.asm', and is used to load our IDT */
 extern void idt_load();
+extern void idt_enable();
 
 /* Use this function to set an entry in the IDT. Alot simpler
 *  than twiddling with the GDT ;) */

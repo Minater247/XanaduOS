@@ -30,6 +30,8 @@ void kernel_main(void) {
 	printf("Loading IDT...\n");
 	idt_install();
 	printf("IDT loaded.\n");
+	idt_enable();
+	printf("IDT enabled.\n");
 
 	int A20_available = check_A20();
 }

@@ -2,4 +2,6 @@
 #define _IDT_H
 
 void idt_install();
+void idt_enable();
+
 #endif

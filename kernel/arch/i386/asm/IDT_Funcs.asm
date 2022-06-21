@@ -6,11 +6,16 @@
 ; Loads the IDT defined in '_idtp' into the processor.
 ; This is declared in C as 'extern void idt_load();'
 GLOBAL idt_load
+GLOBAL idt_enable
 EXTERN idtp
 
 SECTION .text
 idt_load:
     lidt [idtp]
+    ret
+
+idt_enable:
+    sti
     ret
 
 ; Service Routines (ISRs) right here!
