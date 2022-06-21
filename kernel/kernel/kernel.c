@@ -13,6 +13,8 @@ uint32_t basic_page_table[1024] __attribute__((aligned(4096)));
 
 int check_A20();
 int checkProtected();
+void a20_bios();
+void a20_in();
 
 void kernel_main(void) {
 	terminal_initialize();
@@ -43,8 +45,23 @@ void kernel_main(void) {
 	printf("IDT enabled.\n");
 
 	if (check_A20()) {
-		printf("A20 is enabled.\n");
+		printf("A20 is enabled. No action taken.\n");
 	} else {
 		printf("A20 is disabled.\n");
+		printf("Attempting to enable via BIOS...\n");
+		a20_bios();
+		if (!check_A20()) {
+			printf("A20 is still disabled.\n");
+			printf("Attempting to enable via IN 0xee");
+			a20_in();
+			if (!check_A20()) {
+				printf("Unable to enable A20 line.\n");
+			} else {
+				printf("A20 is now enabled.\n");
+			}
+		}
+		else {
+			printf("A20 successfully enabled.\n");
+		}
 	}
 }
