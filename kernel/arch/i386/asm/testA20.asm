@@ -1,63 +1,19 @@
 [BITS 32]
 
-EXTERN a20_status
 GLOBAL check_A20
 
 SECTION .text
 check_A20:
-    push ds
-    xor ax, ax ; clear ax
-    not ax ; set ax to 0xFFFF
-    ;mov ds, ax
-    pop ds
-    ret ;testing. need to know why it's not working
-
-
-
-    ;pushf
-    ;push ds
-    ;push es
-    ;push di
-    ;push si
- 
-    ;cli
- 
-    ;xor ax, ax ; ax = 0
-    ;mov es, ax
- 
-    ;not ax ; ax = 0xFFFF
-    ;mov ds, ax
- 
-;    mov di, 0x0500
-;    mov si, 0x0510
-; 
-;    mov al, byte [es:di]
-;    push ax
-; 
-;    mov al, byte [ds:si]
-;    push ax
-; 
-;    mov byte [es:di], 0x00
-;    mov byte [ds:si], 0xFF
-; 
-;    cmp byte [es:di], 0xFF
-; 
-;    pop ax
-;    mov byte [ds:si], al
-; 
-;    pop ax
-;    mov byte [es:di], al
-; 
-;    mov ax, 0
-;    je check_a20__exit
-; 
-;    mov ax, 1
-; 
-;check_a20__exit:
-    ;pop si
-    ;pop di
-    ;pop es
-    ;pop ds
-    ;popf
- 
-    ;ret
+    pushad
+    mov edi,0x112345  ;odd megabyte address.
+    mov esi,0x012345  ;even megabyte address.
+    mov [esi],esi     ;making sure that both addresses contain diffrent values.
+    mov [edi],edi     ;(if A20 line is cleared the two pointers would point to the address 0x012345 that would contain 0x112345 (edi)) 
+    cmpsd             ;compare addresses to see if the're equivalent.
+    popad
+    jne A20_on        ;if not equivalent , A20 line is set.
+    mov eax, 0
+    ret               ;if equivalent , the A20 line is cleared.
+A20_on:
+    mov eax, 1
+    ret
