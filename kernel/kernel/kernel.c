@@ -5,6 +5,7 @@
 #include <kernel/tty.h>
 #include <kernel/asmfuncs.h>
 #include <kernel/GDT.h>
+#include <kernel/IDT.h>
 
 uint32_t page_directory[1024] __attribute__((aligned(4096)));
 uint32_t basic_page_table[1024] __attribute__((aligned(4096)));
@@ -25,4 +26,10 @@ void kernel_main(void) {
 
 	gdt_install();
 	printf("GDT loaded.\n");
+
+	printf("Loading IDT...\n");
+	idt_install();
+	printf("IDT loaded.\n");
+
+	int A20_available = check_A20();
 }
