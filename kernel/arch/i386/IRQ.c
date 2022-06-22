@@ -1,4 +1,5 @@
 #include <kernel/asmfuncs.h>
+#include <kernel/IDT.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -125,3 +126,6 @@ void irq_handler(struct regs *r)
     *  interrupt controller too */
     outb(0x20, 0x20);
 }
+
+#include "keyboard.c"
+irq_uninstall_handler(1);
