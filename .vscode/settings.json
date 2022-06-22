@@ -6,6 +6,12 @@
         "stdio.h": "c",
         "tty.h": "c",
         "stdint.h": "c",
-        "asmfuncs.h": "c"
+        "asmfuncs.h": "c",
+        "irq.h": "c"
+    },
+    "editor.quickSuggestions": {
+        "other": "on",
+        "comments": "off",
+        "strings": "off"
     }
 }

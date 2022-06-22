@@ -7,6 +7,7 @@
 #include <kernel/asmfuncs.h>
 #include <kernel/GDT.h>
 #include <kernel/IDT.h>
+#include <kernel/IRQ.h>
 
 uint32_t page_directory[1024] __attribute__((aligned(4096)));
 uint32_t basic_page_table[1024] __attribute__((aligned(4096)));

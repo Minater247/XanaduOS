@@ -53,6 +53,7 @@ void idt_set_gate(unsigned char num, unsigned long base,
 }
 
 #include "ISRs.c" //yes there's an include down here. :)
+#include <kernel/IRQ.h>
 
 /* Installs the IDT */
 void idt_install(bool defaultInstall)
@@ -60,14 +61,15 @@ void idt_install(bool defaultInstall)
     /* Sets the special IDT pointer up, just like in 'gdt.c' */
     idtp.limit = (sizeof (struct idt_entry) * 256) - 1;
     idtp.base = (unsigned int)(&idt);
+    
+    /* Clear out the entire IDT, initializing it to zeros */
+    memset(&idt, 0, sizeof(struct idt_entry) * 256);
 
-    if (defaultInstall) {
-        /* Clear out the entire IDT, initializing it to zeros */
-        memset(&idt, 0, sizeof(struct idt_entry) * 256);
+    /* Add any new ISRs to the IDT here using idt_set_gate */
+    isrs_install();
 
-        /* Add any new ISRs to the IDT here using idt_set_gate */
-        isrs_install();
-    }
+    /* Add any new IRQs to the IDT here using idt_set_gate */
+    irq_install();
 
     /* Points the processor's internal register to the new IDT */
     idt_load();

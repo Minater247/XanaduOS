@@ -1,3 +1,1 @@
-Check all the IDT functions to ensure they're working properly
-a20 gate enable
 Keyboard input

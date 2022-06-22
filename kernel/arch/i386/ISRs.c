@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <kernel/asmfuncs.h>
 
 /* These are function prototypes for all of the exception
 *  handlers: The first 32 entries in the IDT are reserved
@@ -36,15 +37,6 @@ extern void isr28();
 extern void isr29();
 extern void isr30();
 extern void isr31();
-
-/* This defines what the stack looks like after an ISR was running */
-struct regs
-{
-    unsigned int gs, fs, es, ds;      /* pushed the segs last */
-    unsigned int edi, esi, ebp, esp, ebx, edx, ecx, eax;  /* pushed by 'pusha' */
-    unsigned int int_no, err_code;    /* our 'push byte #' and ecodes do this */
-    unsigned int eip, cs, eflags, useresp, ss;   /* pushed by the processor automatically */ 
-};
 	
 
 
