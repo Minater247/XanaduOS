@@ -8,6 +8,8 @@
 #include <kernel/GDT.h>
 #include <kernel/IDT.h>
 #include <kernel/IRQ.h>
+#include <kernel/keyboard.h>
+#include <kernel/PIC.h>
 
 uint32_t page_directory[1024] __attribute__((aligned(4096)));
 uint32_t basic_page_table[1024] __attribute__((aligned(4096)));
@@ -39,6 +41,10 @@ void kernel_main(void) {
 	gdt_install();
 	printf("GDT loaded.\n");
 
+	printf("Setting up basic IRQs...\n");
+	keyboard_install();
+	printf("IRQs created.\n");
+
 	printf("Loading IDT...\n");
 	idt_install();
 	printf("IDT loaded.\n");
@@ -65,4 +71,8 @@ void kernel_main(void) {
 			printf("A20 successfully enabled.\n");
 		}
 	}
+
+	keyboard_install();
+	clear_irq_mask(2);
+	clear_irq_mask(1);
 }

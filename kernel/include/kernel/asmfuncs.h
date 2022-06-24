@@ -15,5 +15,6 @@ inline void enablePaging();
 inline void disablePaging();
 inline void enablePAE();
 inline void disablePAE();
+inline void io_wait(void);
 
 #endif

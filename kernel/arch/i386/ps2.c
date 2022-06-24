@@ -1,2 +1,1 @@
-#include "../../include/kernel/asmfuncs.h"
-
+#include <kernel/asmfuncs.h>

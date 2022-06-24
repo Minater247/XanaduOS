@@ -1,5 +1,5 @@
 #include <string.h>
-#include <stdbool.h>
+#include <stdio.h>
 
 // Flags:
 // P: Segment present? (1=yes, 0=no)
@@ -52,11 +52,11 @@ void idt_set_gate(unsigned char num, unsigned long base,
     idt[num].flags = flags;
 }
 
-#include "ISRs.c" //yes there's an include down here. :)
+#include "ISRs.c" //will fix the .h file
 #include <kernel/IRQ.h>
 
 /* Installs the IDT */
-void idt_install(bool defaultInstall)
+void idt_install()
 {
     /* Sets the special IDT pointer up, just like in 'gdt.c' */
     idtp.limit = (sizeof (struct idt_entry) * 256) - 1;

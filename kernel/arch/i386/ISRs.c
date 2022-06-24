@@ -37,8 +37,6 @@ extern void isr28();
 extern void isr29();
 extern void isr30();
 extern void isr31();
-	
-
 
 /* This is a very repetitive function... it's not hard, it's
 *  just annoying. As you can see, we set the first 32 entries
@@ -59,6 +57,7 @@ void isrs_install()
     idt_set_gate(5, (unsigned)isr5, 0x08, 0x8E);
     idt_set_gate(6, (unsigned)isr6, 0x08, 0x8E);
     idt_set_gate(7, (unsigned)isr7, 0x08, 0x8E);
+
     idt_set_gate(8, (unsigned)isr8, 0x08, 0x8E);
     idt_set_gate(9, (unsigned)isr9, 0x08, 0x8E);
     idt_set_gate(10, (unsigned)isr10, 0x08, 0x8E);
@@ -67,6 +66,7 @@ void isrs_install()
     idt_set_gate(13, (unsigned)isr13, 0x08, 0x8E);
     idt_set_gate(14, (unsigned)isr14, 0x08, 0x8E);
     idt_set_gate(15, (unsigned)isr15, 0x08, 0x8E);
+
     idt_set_gate(16, (unsigned)isr16, 0x08, 0x8E);
     idt_set_gate(17, (unsigned)isr17, 0x08, 0x8E);
     idt_set_gate(18, (unsigned)isr18, 0x08, 0x8E);
@@ -75,6 +75,7 @@ void isrs_install()
     idt_set_gate(21, (unsigned)isr21, 0x08, 0x8E);
     idt_set_gate(22, (unsigned)isr22, 0x08, 0x8E);
     idt_set_gate(23, (unsigned)isr23, 0x08, 0x8E);
+
     idt_set_gate(24, (unsigned)isr24, 0x08, 0x8E);
     idt_set_gate(25, (unsigned)isr25, 0x08, 0x8E);
     idt_set_gate(26, (unsigned)isr26, 0x08, 0x8E);
@@ -89,7 +90,7 @@ void isrs_install()
 *  corresponds to each and every exception. We get the correct
 *  message by accessing like:
 *  exception_message[interrupt_number] */
-const char *exception_messages[] =
+unsigned char *exception_messages[] =
 {
     "Division By Zero",
     "Debug",
@@ -99,6 +100,7 @@ const char *exception_messages[] =
     "Out of Bounds",
     "Invalid Opcode",
     "No Coprocessor",
+
     "Double Fault",
     "Coprocessor Segment Overrun",
     "Bad TSS",
@@ -107,37 +109,38 @@ const char *exception_messages[] =
     "General Protection Fault",
     "Page Fault",
     "Unknown Interrupt",
+
     "Coprocessor Fault",
     "Alignment Check",
     "Machine Check",
-    "Reserved (0x13)",
-    "Reserved (0x14)",
-    "Reserved (0x15)",
-    "Reserved (0x16)",
-    "Reserved (0x17)",
-    "Reserved (0x18)",
-    "Reserved (0x19)",
-    "Reserved (0x1A)",
-    "Reserved (0x1B)",
-    "Reserved (0x1C)",
-    "Reserved (0x1D)",
-    "Reserved (0x1E)",
-    "Reserved (0x1F)"
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved",
+    "Reserved"
 };
 
+/* All of our Exception handling Interrupt Service Routines will
+*  point to this function. This will tell us what exception has
+*  happened! Right now, we simply halt the system by hitting an
+*  endless loop. All ISRs disable interrupts while they are being
+*  serviced as a 'locking' mechanism to prevent an IRQ from
+*  happening and messing up kernel data structures */
 void fault_handler(struct regs *r)
 {
-    /* Is this a fault whose number is from 0 to 31? */
     if (r->int_no < 32)
     {
-        /* Display the description for the Exception that occurred.
-        *  In this tutorial, we will simply halt the system using an
-        *  infinite loop */
         printf(exception_messages[r->int_no]);
         printf(" Exception. System Halted!\n");
-        for (;;);
-    } else {
-        printf("Unknown Interrupt. System Halted!\n");
         for (;;);
     }
 }

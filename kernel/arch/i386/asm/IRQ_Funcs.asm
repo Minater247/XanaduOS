@@ -123,6 +123,7 @@ extern irq_handler
 ; This is a stub that we have created for IRQ based ISRs. This calls
 ; '_irq_handler' in our C code. We need to create this in an 'irq.c'
 irq_common_stub:
+    int 0x0e
     pusha
     push ds
     push es
