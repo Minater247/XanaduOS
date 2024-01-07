@@ -1,0 +1,9 @@
+*.txt
+*.log
+*.iso
+*.bin
+*.o
+*.dbo
+isodir
+dbg_isodir
+settings.json
