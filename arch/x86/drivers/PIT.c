@@ -22,7 +22,8 @@ void timer_interrupt_handler(regs_t *r)
     tick++;
     if (tick % 18 == 0)
     {
-        terminal_writestring("Tick\n");
+        terminal_printf("Tick\n");
+        //we will have scheduling here at some point
     }
 }
 

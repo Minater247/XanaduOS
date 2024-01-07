@@ -17,7 +17,8 @@ OBJ_DEBUG = $(SFILES:.s=.dbs) $(CFILES:.c=.dbo)
 all: $(OBJ) link
 
 link:
-	$(CC) $(LDFLAGS) -o kernel.bin $(OBJ)
+	@echo Linking kernel.bin...
+	@$(CC) $(LDFLAGS) -o kernel.bin $(OBJ)
 
 all_debug: $(OBJ_DEBUG) link_debug
 
@@ -26,10 +27,12 @@ link_debug:
 
 # Depending on the architecture, we need to use different assembly syntax
 %.o: %.s
-	$(AS) -o $@ $<
+	@echo Assembling $<...
+	@$(AS) -o $@ $<
 
 %.o: %.c
-	$(CC) -c $< $(CFLAGS) -o $@
+	@echo Compiling $<...
+	@$(CC) -c $< $(CFLAGS) -o $@
 
 %.dbo: %.c
 	$(CC) -c $< $(CFLAGS) -g -o $@
@@ -70,7 +73,7 @@ debug_term:
 	gdb -ex "target remote localhost:1234" -ex "symbol-file kernel.bin" -ex "target remote localhost:1234"
 
 clean:
-	rm -f $(OBJ) $(OBJ_DEBUG) kernel.bin os.iso os_dbg.iso *.o
+	@rm -f $(OBJ) $(OBJ_DEBUG) kernel.bin os.iso os_dbg.iso *.o
 
 crun: clean run
 cdbg: clean debug

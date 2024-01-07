@@ -107,7 +107,6 @@ void terminal_write(const char *data, size_t size)
 void terminal_writestring(const char *data)
 {
     terminal_write(data, strlen(data));
-    terminal_movecursor(terminal_column, terminal_row);
 }
 
 void terminal_movecursor(uint8_t x, uint8_t y)
@@ -165,4 +164,5 @@ void terminal_printf(const char *format, ...)
             terminal_putchar(format[i]);
         }
     }
+    terminal_movecursor(terminal_column, terminal_row);
 }

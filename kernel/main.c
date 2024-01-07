@@ -19,10 +19,10 @@ void kernel_main() {
 		{
 			if (code == '\n')
 			{
-				terminal_writestring("\n");
+				terminal_printf("\n");
 			} else {
 				buf[0] = code;
-				terminal_writestring(buf);
+				terminal_printf(buf);
 			}
 		}
 	}

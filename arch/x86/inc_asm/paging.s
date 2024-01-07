@@ -33,6 +33,7 @@ paging_init:
 
 .section .data
 .align 4096
+.global page_directory
 page_directory:
     .rept 1024
     .long 0x00000002

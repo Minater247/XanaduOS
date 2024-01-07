@@ -28,6 +28,12 @@
     } \
 } while (0)
 
+#define kassert_msg(expression, msg, ...) do { \
+    if (!(expression)) { \
+        kpanic(msg, ##__VA_ARGS__); \
+    } \
+} while (0)
+
 // Prints a special unimplemented error message and halts the system
 #define unimplemented(msg) do { \
     kpanic("Unimplemented error: %s", msg); \
