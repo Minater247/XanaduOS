@@ -25,12 +25,25 @@ stack_top:
 
 .include "arch/x86/inc_asm/paging.s"
 
+
 .type _start, @function
 _start:
 	mov $stack_top-0xC0000000, %esp
 
+	/* Store the multiboot info in the labels, since C code is having trouble reading it from the stack */
+	mov %eax, given_magic-0xC0000000
+	mov %ebx, given_mboot-0xC0000000
+
 	call paging_init
 
-	mov $kernel_main, %eax
-	jmp *%eax
+	mov $kernel_main, %ecx
+	jmp *%ecx
 	/* Should never return, given that we're jumping from the lower half */
+
+.section .data
+.global given_magic
+given_magic:
+	.long 0x00000000 /* will store the magic number here */
+.global given_mboot
+given_mboot:
+	.long 0x00000000 /* will store the multiboot info here */

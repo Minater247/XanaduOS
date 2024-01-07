@@ -8,6 +8,7 @@
 #include "inc_c/display.h"
 #include "inc_c/io.h"
 #include "inc_c/hardware.h"
+#include "../../kernel/include/errors.h"
 
 gdt_entry_t gdt[5];
 gdt_ptr_t   gdt_ptr;
@@ -195,33 +196,7 @@ void page_fault_error(regs_t *r) {
     asm volatile("mov %%cr2, %0" : "=r" (faulting_address));
     uint32_t flags = r->err_code;
 
-    terminal_setcolor(TERMCOLOR_ERROR);
-    terminal_writestring("Page fault! ( ");
-    if (flags & 0x1) {
-        terminal_writestring("Present |");
-    } else {
-        terminal_writestring("Not present |");
-    }
-    if (flags & 0x2) {
-        terminal_writestring("Write |");
-    } else {
-        terminal_writestring("Read |");
-    }
-    if (flags & 0x4) {
-        terminal_writestring("User |");
-    } else {
-        terminal_writestring("Supervisor |");
-    }
-    if (flags & 0x8) {
-        terminal_writestring("Reserved bit set |");
-    }
-    if (flags & 0x10) {
-        terminal_writestring("Instruction fetch ");
-    }
-    terminal_writestring(" ) at 0x");
-    terminal_write_hex(faulting_address);
-    terminal_writestring("\n");
-    for (;;);
+    kpanic("Page fault! (%s%s%s%s%s) at 0x%x\n", (flags & 0x1) ? "Present |" : "Not present |", (flags & 0x2) ? "Write |" : "Read |", (flags & 0x4) ? "User |" : "Supervisor |", (flags & 0x8) ? "Reserved bit set |" : "", (flags & 0x10) ? "Instruction fetch" : "", faulting_address);
 }
 
 void isr_handler(regs_t *r) {
@@ -230,10 +205,7 @@ void isr_handler(regs_t *r) {
             page_fault_error(r);
         }
 
-        terminal_setcolor(TERMCOLOR_ERROR);
-        terminal_writestring(exception_messages[r->int_no]);
-        terminal_writestring(" Exception. System Halted!\n");
-        for (;;);
+        kpanic("%s Exception. System Halted!\n", exception_messages[r->int_no]);
     }
 }
 

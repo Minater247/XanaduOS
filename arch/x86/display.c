@@ -1,9 +1,11 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdarg.h>
 
 #include "inc_c/display.h"
 #include "inc_c/io.h"
+#include "inc_c/string.h"
 
 size_t strlen(const char *str)
 {
@@ -125,20 +127,42 @@ void terminal_setpos(uint8_t x, uint8_t y)
     terminal_movecursor(x, y);
 }
 
-void terminal_write_hex(uint32_t num) {
-    char hex[8];
-    int i = 0;
-
-    for (i = 0; i < 8; i++) {
-        hex[i] = num & 0xF;
-        num >>= 4;
-    }
-
-    for (i = 7; i >= 0; i--) {
-        if (hex[i] < 10) {
-            terminal_putchar(hex[i] + '0');
-        } else {
-            terminal_putchar(hex[i] - 10 + 'A');
+void terminal_printf(const char *format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    char buffer[32];
+    for (size_t i = 0; i < strlen(format); i++)
+    {
+        if (format[i] == '%')
+        {
+            switch (format[++i])
+            {
+            case 'd':
+                itoa(va_arg(args, int), buffer, 10);
+                terminal_writestring(buffer);
+                break;
+            case 's':
+                terminal_writestring(va_arg(args, char *));
+                break;
+            case 'c':
+                terminal_putchar(va_arg(args, int));
+                break;
+            case 'x':
+                itoa(va_arg(args, uint32_t), buffer, 16);
+                terminal_writestring(buffer);
+                break;
+            case '%':
+                terminal_putchar('%');
+                break;
+            default:
+                terminal_putchar(format[i]);
+                break;
+            }
+        }
+        else
+        {
+            terminal_putchar(format[i]);
         }
     }
 }

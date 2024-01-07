@@ -8,15 +8,11 @@
 //temp
 #include "../arch/x86/drivers/keyboard.h"
 
- 
-void kernel_main(void) 
-{
+
+void kernel_main() {
 	boot_initialize();
 
-	terminal_initialize();
-	terminal_writestring("Hello, kernel World!\n");
-	terminal_writestring("This is a new line!\n");
-
+	char buf[2] = {0, 0};
 	while (true) {
 		char code = keyboard_getchar();
 		if (code != 0)
@@ -25,7 +21,8 @@ void kernel_main(void)
 			{
 				terminal_writestring("\n");
 			} else {
-				terminal_putchar(code);
+				buf[0] = code;
+				terminal_writestring(buf);
 			}
 		}
 	}

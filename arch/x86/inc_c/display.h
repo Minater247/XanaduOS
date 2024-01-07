@@ -3,6 +3,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdarg.h>
 
 #define VGA_COLOR_BLACK 0
 #define VGA_COLOR_BLUE 1
@@ -37,6 +38,6 @@ void terminal_putchar(char c);
 void terminal_write(const char* data, size_t size);
 void terminal_writestring(const char* data);
 void terminal_movecursor(uint8_t x, uint8_t y);
-void terminal_write_hex(uint32_t num);
+void terminal_printf(const char *format, ...);
 
 #endif
