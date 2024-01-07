@@ -6,7 +6,7 @@ AS = i686-elf-as.exe
 OBJCOPY = i686-elf-objcopy.exe
 
 SFILES := $(wildcard arch/$(ARCH)/*.s)
-CFILES := $(wildcard arch/$(ARCH)/*.c) $(wildcard kernel/*.c) $(wildcard kernel/*/*.c)
+CFILES := $(wildcard arch/$(ARCH)/*.c) $(wildcard kernel/*.c) $(wildcard kernel/*/*.c) $(wildcard arch/$(ARCH)/*/*.c)
 
 CFLAGS = -std=gnu99 -ffreestanding -O2 -Wall -Wextra -Iarch/$(ARCH) -Ikernel/include
 LDFLAGS = -T arch/$(ARCH)/linker.ld -O2 -nostdlib -ffreestanding -lgcc
