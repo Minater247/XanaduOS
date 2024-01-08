@@ -1,6 +1,9 @@
 #ifndef _MEMORY_H
 #define _MEMORY_H
 
+#include <stdint.h>
+#include <stdbool.h>
+
 #include "inc_c/multiboot.h"
 
 void memory_initialize(multiboot_info_t *mboot_info);

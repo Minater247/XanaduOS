@@ -55,7 +55,7 @@ void terminal_putchar(char c)
     if (c == '\n')
     {
         terminal_column = 0;
-        //scroll the buffer if we're at the bottom
+        // scroll the buffer if we're at the bottom
         if (++terminal_row == VGA_HEIGHT)
         {
             terminal_row = VGA_HEIGHT - 2;
@@ -67,7 +67,7 @@ void terminal_putchar(char c)
                     terminal_buffer[index] = terminal_buffer[index + VGA_WIDTH];
                 }
             }
-            //clear the last line
+            // clear the last line
             for (size_t x = 0; x < VGA_WIDTH; x++)
             {
                 const size_t index = (VGA_HEIGHT - 1) * VGA_WIDTH + x;
@@ -75,11 +75,15 @@ void terminal_putchar(char c)
             }
         }
         return;
-    } else if (c == '\b') {
+    }
+    else if (c == '\b')
+    {
         if (terminal_column > 0)
         {
             terminal_column--;
-        } else {
+        }
+        else
+        {
             if (terminal_row > 0)
             {
                 terminal_row--;
@@ -158,7 +162,7 @@ void terminal_printf(const char *format, ...)
                 switch (format[++i])
                 {
                 case 'd':
-                    //run itoa on two 32-bit ints
+                    // run itoa on two 32-bit ints
                     uint32_t a = va_arg(args, uint32_t);
                     uint32_t b = va_arg(args, uint32_t);
                     itoa(a, buffer, 10);
@@ -167,7 +171,7 @@ void terminal_printf(const char *format, ...)
                     terminal_writestring(buffer);
                     break;
                 case 'x':
-                    //run itoa on two 32-bit ints
+                    // run itoa on two 32-bit ints
                     a = va_arg(args, uint32_t);
                     b = va_arg(args, uint32_t);
                     itoa(a, buffer, 16);
@@ -180,6 +184,222 @@ void terminal_printf(const char *format, ...)
             default:
                 terminal_putchar(format[i]);
                 break;
+            }
+        }
+        else if (format[i] == '\033')
+        {
+            //read forward until \0 or a non-numeric/; character
+            uint32_t end_i = i + 1;
+            if (format[end_i] == '[')
+            {
+                end_i++;
+            } else {
+                // not a valid escape sequence
+                terminal_putchar(format[i]);
+                continue;
+            }
+            while (format[end_i] != '\0' && format[end_i] != ';' && format[end_i] >= '0' && format[end_i] <= '9')
+            {
+                end_i++;
+            }
+            //make sure we aren't at the end of the string
+            if (format[end_i] == '\0') {
+                break;
+            }
+
+            //depending on the character, process the sequence
+            if (format[end_i] == 'm')
+            {
+                //color sequence, process each semi-colon separated number
+                uint32_t start_i = i + 2;
+                while (start_i < end_i)
+                {
+                    //read the number
+                    uint32_t num = 0;
+                    while (format[start_i] >= '0' && format[start_i] <= '9')
+                    {
+                        num *= 10;
+                        num += format[start_i] - '0';
+                        start_i++;
+                    }
+                    //process the number (this is annoyingly long but it works for now)
+                    switch (num)
+                    {
+                    case 0:
+                        //reset
+                        terminal_color = TERMCOLOR_NORMAL;
+                        break;
+                    case 1:
+                        //bold
+                        terminal_color |= 0x08;
+                        break;
+                    case 4:
+                        //underline
+                        terminal_color |= 0x80;
+                        break;
+                    case 30:
+                        //black fg
+                        terminal_color &= 0xF0;
+                        break;
+                    case 31:
+                        //red fg
+                        terminal_color &= 0xF0;
+                        terminal_color |= 0x04;
+                        break;
+                    case 32:
+                        //green fg
+                        terminal_color &= 0xF0;
+                        terminal_color |= 0x02;
+                        break;
+                    case 33:
+                        //yellow fg
+                        terminal_color &= 0xF0;
+                        terminal_color |= 0x06;
+                        break;
+                    case 34:
+                        //blue fg
+                        terminal_color &= 0xF0;
+                        terminal_color |= 0x01;
+                        break;
+                    case 35:
+                        //magenta fg
+                        terminal_color &= 0xF0;
+                        terminal_color |= 0x05;
+                        break;
+                    case 36:
+                        //cyan fg
+                        terminal_color &= 0xF0;
+                        terminal_color |= 0x03;
+                        break;
+                    case 37:
+                        //white fg
+                        terminal_color &= 0xF0;
+                        terminal_color |= 0x07;
+                        break;
+                    case 40:
+                        //black bg
+                        terminal_color &= 0x0F;
+                        break;
+                    case 41:
+                        //red bg
+                        terminal_color &= 0x0F;
+                        terminal_color |= 0x40;
+                        break;
+                    case 42:
+                        //green bg
+                        terminal_color &= 0x0F;
+                        terminal_color |= 0x20;
+                        break;
+                    case 43:
+                        //yellow bg
+                        terminal_color &= 0x0F;
+                        terminal_color |= 0x60;
+                        break;
+                    case 44:
+                        //blue bg
+                        terminal_color &= 0x0F;
+                        terminal_color |= 0x10;
+                        break;
+                    case 45:
+                        //magenta bg
+                        terminal_color &= 0x0F;
+                        terminal_color |= 0x50;
+                        break;
+                    case 46:
+                        //cyan bg
+                        terminal_color &= 0x0F;
+                        terminal_color |= 0x30;
+                        break;
+                    case 47:
+                        //white bg
+                        terminal_color &= 0x0F;
+                        terminal_color |= 0x70;
+                        break;
+                    case 90:
+                        //light black fg
+                        terminal_color &= 0xF0;
+                        terminal_color |= 0x08;
+                        break;
+                    case 91:
+                        //light red fg
+                        terminal_color &= 0xF0;
+                        terminal_color |= 0x0C;
+                        break;
+                    case 92:
+                        //light green fg
+                        terminal_color &= 0xF0;
+                        terminal_color |= 0x0A;
+                        break;
+                    case 93:
+                        //light yellow fg
+                        terminal_color &= 0xF0;
+                        terminal_color |= 0x0E;
+                        break;
+                    case 94:
+                        //light blue fg
+                        terminal_color &= 0xF0;
+                        terminal_color |= 0x09;
+                        break;
+                    case 95:
+                        //light magenta fg
+                        terminal_color &= 0xF0;
+                        terminal_color |= 0x0D;
+                        break;
+                    case 96:
+                        //light cyan fg
+                        terminal_color &= 0xF0;
+                        terminal_color |= 0x0B;
+                        break;
+                    case 97:
+                        //light white fg
+                        terminal_color &= 0xF0;
+                        terminal_color |= 0x0F;
+                        break;
+                    case 100:
+                        //light black bg
+                        terminal_color &= 0x0F;
+                        terminal_color |= 0x80;
+                        break;
+                    case 101:
+                        //light red bg
+                        terminal_color &= 0x0F;
+                        terminal_color |= 0xC0;
+                        break;
+                    case 102:
+                        //light green bg
+                        terminal_color &= 0x0F;
+                        terminal_color |= 0xA0;
+                        break;
+                    case 103:
+                        //light yellow bg
+                        terminal_color &= 0x0F;
+                        terminal_color |= 0xE0;
+                        break;
+                    case 104:
+                        //light blue bg
+                        terminal_color &= 0x0F;
+                        terminal_color |= 0x90;
+                        break;
+                    case 105:
+                        //light magenta bg
+                        terminal_color &= 0x0F;
+                        terminal_color |= 0xD0;
+                        break;
+                    case 106:
+                        //light cyan bg
+                        terminal_color &= 0x0F;
+                        terminal_color |= 0xB0;
+                        break;
+                    case 107:
+                        //light white bg
+                        terminal_color &= 0x0F;
+                        terminal_color |= 0xF0;
+                        break;
+                    }
+                    start_i++;
+                }
+                //move the index to the end of the sequence
+                i = end_i;
             }
         }
         else

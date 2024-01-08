@@ -35,10 +35,11 @@ void boot_initialize() {
         asm volatile("hlt");
     }
 
-    terminal_printf("Multiboot information:\n");
+    //loved the ToaruOS multiboot info dump, so I'm doing it too
+    terminal_printf("\033[94mMultiboot information:\n");
     char buf[9]; //for left-filling hex numbers to 8 digits
 
-    terminal_printf("Flags : 0x");
+    terminal_printf("\033[0mFlags : 0x");
     memset(buf, 0, 8);
     itoa(mboot_info->flags, buf, 16);
     while (buf[7] == 0)
@@ -324,13 +325,16 @@ void boot_initialize() {
     }
     terminal_printf("%s\n", buf);
 
-    terminal_printf("End of multiboot information.\n");
+    terminal_printf("\033[97mEnd of multiboot information.\n");
 
     terminal_printf("Booted from %s.\n", mboot_info->boot_loader_name);
     terminal_printf("%dKB lower memory\n", mboot_info->mem_lower);
     terminal_printf("%dKB upper memory (%dMB)\n", mboot_info->mem_upper, mboot_info->mem_upper / 1024);
 
-    terminal_printf("Heap time!\n");
+    terminal_printf("\033[0mTesting colors...\n");
+    terminal_printf("\033[40m \033[41m \033[42m \033[43m \033[44m \033[45m \033[46m \033[47m \033[100m \033[101m \033[102m \033[103m \033[104m \033[105m \033[106m \033[107m \n");
+
+    terminal_printf("\033[0mHeap time!\n");
 
     memory_initialize(mboot_info);
 
