@@ -330,9 +330,9 @@ void boot_initialize() {
     terminal_printf("%dKB lower memory\n", mboot_info->mem_lower);
     terminal_printf("%dKB upper memory (%dMB)\n", mboot_info->mem_upper, mboot_info->mem_upper / 1024);
 
-    terminal_printf("Heap time!");
+    terminal_printf("Heap time!\n");
 
-    memory_initialize();
+    memory_initialize(mboot_info);
 
     asm volatile("sti");
 }

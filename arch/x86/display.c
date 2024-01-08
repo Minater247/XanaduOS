@@ -154,6 +154,29 @@ void terminal_printf(const char *format, ...)
             case '%':
                 terminal_putchar('%');
                 break;
+            case 'l':
+                switch (format[++i])
+                {
+                case 'd':
+                    //run itoa on two 32-bit ints
+                    uint32_t a = va_arg(args, uint32_t);
+                    uint32_t b = va_arg(args, uint32_t);
+                    itoa(a, buffer, 10);
+                    terminal_writestring(buffer);
+                    itoa(b, buffer, 10);
+                    terminal_writestring(buffer);
+                    break;
+                case 'x':
+                    //run itoa on two 32-bit ints
+                    a = va_arg(args, uint32_t);
+                    b = va_arg(args, uint32_t);
+                    itoa(a, buffer, 16);
+                    terminal_writestring(buffer);
+                    itoa(b, buffer, 16);
+                    terminal_writestring(buffer);
+                    break;
+                }
+                break;
             default:
                 terminal_putchar(format[i]);
                 break;

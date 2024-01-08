@@ -27,4 +27,6 @@ SECTIONS
     {
         *(.data)
     }
+
+    KERNEL_END = .;
 }
