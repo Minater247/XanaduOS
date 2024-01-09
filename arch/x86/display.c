@@ -39,11 +39,6 @@ void terminal_initialize(void)
     }
 }
 
-void terminal_setcolor(uint8_t color)
-{
-    terminal_color = color;
-}
-
 void terminal_putentryat(char c, uint8_t color, size_t x, size_t y)
 {
     const size_t index = y * VGA_WIDTH + x;
@@ -58,7 +53,7 @@ void terminal_putchar(char c)
         // scroll the buffer if we're at the bottom
         if (++terminal_row == VGA_HEIGHT)
         {
-            terminal_row = VGA_HEIGHT - 2;
+            terminal_row = VGA_HEIGHT - 1;
             for (size_t y = 0; y < VGA_HEIGHT - 1; y++)
             {
                 for (size_t x = 0; x < VGA_WIDTH; x++)
@@ -96,9 +91,7 @@ void terminal_putchar(char c)
     terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
     if (++terminal_column == VGA_WIDTH)
     {
-        terminal_column = 0;
-        if (++terminal_row == VGA_HEIGHT)
-            terminal_row = 0;
+        terminal_write("\n", 1);
     }
 }
 
@@ -198,7 +191,7 @@ void terminal_printf(const char *format, ...)
                 terminal_putchar(format[i]);
                 continue;
             }
-            while (format[end_i] != '\0' && format[end_i] != ';' && format[end_i] >= '0' && format[end_i] <= '9')
+            while (((format[end_i] >= '0' && format[end_i] <= '9') || format[end_i] == ';') && format[end_i] != '\0')
             {
                 end_i++;
             }

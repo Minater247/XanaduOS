@@ -9,8 +9,7 @@
 // Essentially a nonreturning printf - prints the message and halts the system
 #define kpanic(msg, ...) do { \
     asm volatile("cli"); \
-    terminal_setcolor(TERMCOLOR_ERROR); \
-    terminal_printf("Kernel panic:\n"); \
+    terminal_printf("\033[97;41mKernel panic: "); \
     terminal_printf("In function: %s\n", __func__); \
     terminal_printf("%s:%d: \n", __FILE__, __LINE__); \
     terminal_printf(msg, ##__VA_ARGS__); \
