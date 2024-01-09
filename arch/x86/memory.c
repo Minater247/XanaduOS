@@ -37,6 +37,7 @@ typedef struct {
 typedef struct {
     uint32_t entries[1024];
     uint32_t virt[1024]; //virtual addresses of the page tables
+    bool is_full[1024];
     uint32_t phys_addr;
 } __attribute__((packed)) page_directory_t;
 
@@ -55,12 +56,15 @@ extern uint32_t page_directory[]; // defined in paging.s
 heap_header_t *kheap = NULL;
 uint32_t kheap_end = (uint32_t)&KERNEL_END;
 #define INIT_MAP_END 0x800000 // 8 MB (set up in paging.s)
-#define INIT_HEAP_SIZE 0x100000 // 1 MB (technically minus the heap header size)
 memory_region_t *memory_map = NULL;
 uint32_t total_mem_size = 0;
 
 bitmap_1024_t *page_directory_bitmaps[1024]; // physical memory bitmap for memory allocation
 page_directory_t kernel_pd __attribute__((aligned(4096))); // kernel page directory
+
+page_table_t *prealloc_table = NULL; // page table for preallocated memory
+uint32_t prealloc_phys;
+bitmap_1024_t *prealloc_bitmap = NULL; // bitmap for preallocated memory
 
 void memory_initialize(multiboot_info_t *mboot_info)
 {
@@ -73,7 +77,6 @@ void memory_initialize(multiboot_info_t *mboot_info)
     {
         if (mmap->type == MULTIBOOT_MEMORY_AVAILABLE)
         {
-            terminal_printf("Usable memory: 0x%lx - 0x%lx\n", mmap->addr + 0xC0000000, mmap->addr + mmap->len + 0xC0000000);
             if (!memory_map)
             {
                 memory_map = (memory_region_t *)kmalloc(sizeof(memory_region_t));
@@ -94,14 +97,6 @@ void memory_initialize(multiboot_info_t *mboot_info)
         total_mem_size += mmap->len;
     }
 
-    // Print the memory map
-    terminal_printf("Memory map:\n");
-    memory_region_t *region = memory_map;
-    while (region)
-    {
-        terminal_printf("0x%x - 0x%x\n", region->start, region->end);
-        region = region->next;
-    }
     terminal_printf("Total memory: %d MB\n", total_mem_size / 1024 / 1024);
 
     //it's time - clear first 2 entries in page directory
@@ -119,16 +114,20 @@ void memory_initialize(multiboot_info_t *mboot_info)
 
     //set up the kernel page table
     memset(kernel_pd.entries, 0, sizeof(kernel_pd.entries));
+    memset(kernel_pd.virt, 0, sizeof(kernel_pd.virt));
+    memset(kernel_pd.is_full, 0, sizeof(kernel_pd.is_full));
     //Presently set entries will be 0x300 -> 0 and 0x301 -> 0x400000
     uint32_t phys;
     page_table_t *new_map = (page_table_t *)kmalloc_ap(sizeof(page_table_t), &phys);
     memset(new_map->pt_entry, 0, sizeof(new_map->pt_entry));
     kernel_pd.entries[0x300] = phys | 0x3;
     kernel_pd.virt[0x300] = (uint32_t)new_map;
+    kernel_pd.is_full[0x300] = true;
     new_map = (page_table_t *)kmalloc_ap(sizeof(page_table_t), &phys);
     memset(new_map->pt_entry, 0, sizeof(new_map->pt_entry));
     kernel_pd.entries[0x301] = phys | 0x3;
     kernel_pd.virt[0x301] = (uint32_t)new_map;
+    kernel_pd.is_full[0x301] = true;
 
     //set up the page tables for the first 8MB
     for (uint32_t i = 0; i < 1024; i++)
@@ -141,13 +140,15 @@ void memory_initialize(multiboot_info_t *mboot_info)
     asm volatile("mov %0, %%cr3":: "r"((uint32_t)&kernel_pd - 0xC0000000));
 
     //check whether we already have enough space after the heap
-    if (kheap_end + INIT_HEAP_SIZE > INIT_MAP_END + 0xC0000000) {
+    //Expansion should be fine in this case, since we are guaranteed to have through 16MB of DRAM
+    if (kheap_end + 0x100000 > INIT_MAP_END + 0xC0000000) {
         //we need another page table
         page_table_entry_t entry = first_free_page();
         page_table_t *new_map = (page_table_t *)kmalloc_ap(sizeof(page_table_t), &phys);
         memset(new_map->pt_entry, 0, sizeof(new_map->pt_entry));
         kernel_pd.entries[entry.pd_entry + 0x300] = phys | 0x3;
         kernel_pd.virt[entry.pd_entry + 0x300] = (uint32_t)new_map;
+        kernel_pd.is_full[entry.pd_entry + 0x300] = true;
         //set up the page table
         for (uint32_t i = 0; i < 1024; i++)
         {
@@ -159,83 +160,144 @@ void memory_initialize(multiboot_info_t *mboot_info)
         terminal_printf("Mapped memory expanded to 12MB\n");
     }
 
+    prealloc_table = (page_table_t *)kmalloc_ap(sizeof(page_table_t), &prealloc_phys);
+    memset(prealloc_table->pt_entry, 0, sizeof(prealloc_table->pt_entry));
+    prealloc_bitmap = (bitmap_1024_t *)kmalloc(sizeof(bitmap_1024_t));
+    memset(prealloc_bitmap->bitmap, 0xFF, sizeof(prealloc_bitmap->bitmap));
+
     //set up the heap
     kheap = (heap_header_t *)kheap_end;
     kheap->magic = HEAP_MAGIC;
-    kheap->length = INIT_HEAP_SIZE - sizeof(heap_header_t);
+    //fill the rest of memory, up to either 8MB ot 12MB
+    if (kheap_end + 0x100000 > INIT_MAP_END + 0xC0000000) {
+        kheap_end = 0xC0B00000;
+        kheap->length = kheap_end - (uint32_t)kheap - sizeof(heap_header_t);
+    } else {
+        kheap_end = 0xC0800000;
+        kheap->length = kheap_end - (uint32_t)kheap - sizeof(heap_header_t);
+    }
     kheap->free = true;
     kheap->next = NULL;
     kheap->prev = NULL;
-    kheap_end += INIT_HEAP_SIZE;
 
-    page_table_entry_t entry = first_free_page();
-    terminal_printf("First free page: %d, %d\n", entry.pd_entry, entry.pt_entry);
-
-    //allocate and deallocate some stuff to test the heap
-    uint32_t *test = (uint32_t *)kmalloc(4);
-    kassert(test != NULL);
-    *test = 0xDEADBEEF;
-    kassert(*test == 0xDEADBEEF);
-    kfree(test);
-    kassert(kheap->length == INIT_HEAP_SIZE - sizeof(heap_header_t));
-    terminal_printf("\033[1;32mHeap test passed!\033[0m\n");
-
-    //allocate 1MB of memory to test heap
-    test = (uint32_t *)kmalloc(1024 * 1024);
-    kassert(test != NULL); //make sure we can expand the heap (this is sizeof(heap_header_t) too big or an allocation, so it will require expansion)
+    heap_dump();
 }
 
 
+
+bool is_in_usable_memory(uint32_t phys_addr)
+{
+    memory_region_t *region = memory_map;
+    while (region)
+    {
+        if (phys_addr >= region->start && phys_addr < region->end)
+        {
+            return true;
+        }
+        region = region->next;
+    }
+    return false;
+}
+
 page_table_entry_t first_free_page()
 {
-    page_table_entry_t entry;
-    entry.pd_entry = 0;
-    entry.pt_entry = 0;
-    bool found = false;
     for (uint32_t i = 0; i < 1024; i++)
     {
         if (page_directory_bitmaps[i] == NULL)
         {
-            entry.pd_entry = i;
-            entry.pt_entry = 0;
-            found = true;
-            break;
+            return (page_table_entry_t){.pd_entry = i, .pt_entry = 0};
+        } else if (kernel_pd.is_full[i]) {
+            continue;
         }
-        else
+        for (uint32_t j = 0; j < 32; j++)
         {
-            for (uint32_t j = 0; j < 32; j++)
+            if (page_directory_bitmaps[i]->bitmap[j] != 0xFFFFFFFF)
             {
-                //find the first free bit if the pte bitmap is not full
-                if (page_directory_bitmaps[i]->bitmap[j] != 0xFFFFFFFF)
+                for (uint32_t k = 0; k < 32; k++)
                 {
-                    for (uint32_t k = 0; k < 32; k++)
+                    if (!is_in_usable_memory((i * 1024 * 1024) + (j * 32 + k) * 4096))
                     {
-                        if ((page_directory_bitmaps[i]->bitmap[j] & (1 << k)) == 0)
-                        {
-                            entry.pd_entry = i;
-                            entry.pt_entry = j * 32 + k;
-                            found = true;
-                            break;
-                        }
+                        continue;
                     }
-                }
-                if (found)
-                {
-                    break;
+                    if ((page_directory_bitmaps[i]->bitmap[j] & (1 << k)) == 0)
+                    {
+                        return (page_table_entry_t){.pd_entry = i, .pt_entry = j * 32 + k};
+                    }
                 }
             }
         }
-        if (found)
-        {
-            break;
-        }
     }
-    if (!found)
-    {
-        kpanic("No free pages available!");
-    }
-    return entry;
+    kpanic("No free pages available!");
 }
+
+
+//allocate a page of memory
+void alloc_page(uint32_t virt, uint32_t phys, bool make) {
+    //get the page directory entry
+    uint32_t pd_entry = virt >> 22;
+    uint32_t pt_entry = (virt >> 12) & 0x3FF;
+
+    phys &= 0xFFFFF000; //make sure the physical address is page-aligned
+
+    //check if the page is already in use
+    if (kernel_pd.virt[pd_entry] == 0 && make) {
+        kassert(prealloc_table != NULL);
+        //we already have a preallocated space for this page table
+        kernel_pd.virt[pd_entry] = (uint32_t)prealloc_table;
+        kernel_pd.entries[pd_entry] = prealloc_phys | 0x3;
+        kernel_pd.is_full[pd_entry] = false;
+        prealloc_table = NULL;
+    }
+    if ((*(page_table_t *)(kernel_pd.virt[pd_entry])).pt_entry[pt_entry] & 0x1) {
+        kpanic("Attempted to allocate already allocated page!");
+    }
+
+    //set the page table entry
+    ((page_table_t *)(kernel_pd.virt[pd_entry]))->pt_entry[pt_entry] = phys | 0x3;
+
+    //if the bitmap doesn't exist, use the preallocated one
+    if (page_directory_bitmaps[pd_entry] == NULL) {
+        page_directory_bitmaps[pd_entry] = prealloc_bitmap;
+        prealloc_bitmap = NULL;
+    }
+
+    //set the bitmap
+    page_directory_bitmaps[pd_entry]->bitmap[pt_entry / 32] |= (1 << (pt_entry % 32));
+
+    //check if the page directory entry is full
+    if (page_directory_bitmaps[pd_entry]->bitmap[pt_entry / 32] == 0xFFFFFFFF) {
+        kernel_pd.is_full[pd_entry] = true;
+    }
+}
+
+
+void heap_expand() {
+    //expand the heap by 1MB (1024 pages)
+    uint32_t alloc_location = kheap_end;
+    page_table_entry_t entry = first_free_page();
+
+    for (uint32_t i = 0; i < 1024; i++) {
+        alloc_page(alloc_location + i * 0x1000, (entry.pd_entry * 0x400000) + (entry.pt_entry * 0x1000) + i * 0x1000, true);
+    }
+
+    kheap_end += 0x100000;
+    //find the last header, and if free, expand by 1MB
+    heap_header_t *header;
+    for (header = kheap; header->next != NULL; header = header->next);
+    if (header->free) {
+        header->length += 0x100000;
+    } else {
+        //create a new header
+        heap_header_t *new_header = (heap_header_t *)kheap_end;
+        new_header->magic = HEAP_MAGIC;
+        new_header->length = 0x100000 - sizeof(heap_header_t);
+        new_header->free = true;
+        new_header->next = NULL;
+        new_header->prev = header;
+        header->next = new_header;
+    }
+}
+
 
 void heap_dump()
 {
@@ -243,7 +305,7 @@ void heap_dump()
     // for each header, print the header, the contents, and the next header
     for (heap_header_t *header = kheap; header != NULL; header = header->next)
     {
-        terminal_printf("@ 0x%x, length: %d\n", header, header->length);
+        terminal_printf("@ 0x%x, length: %x, free: %s\n", header, header->length, header->free ? "true" : "false");
         terminal_printf("Contents: 0x%x\n", *(uint32_t *)((uint32_t)header + sizeof(heap_header_t)));
     }
 }
@@ -320,7 +382,10 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
                 
                 if (phys != NULL)
                 {
-                    kpanic("kmalloc with align and phys not implemented");
+                    //find the entry via the page table
+                    uint32_t pd_entry = aligned_addr >> 22;
+                    uint32_t pt_entry = (aligned_addr >> 12) & 0x3FF;
+                    *phys = ((page_table_t *)kernel_pd.virt[pd_entry])->pt_entry[pt_entry] & 0xFFFFF000;
                 }
 
                 // now we can return the aligned address
@@ -360,7 +425,10 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
 
                 if (phys != NULL)
                 {
-                    kpanic("kmalloc with phys not implemented");
+                    //find the entry via the page table
+                    uint32_t pd_entry = (uint32_t)header >> 22;
+                    uint32_t pt_entry = ((uint32_t)header >> 12) & 0x3FF;
+                    *phys = (((page_table_t *)kernel_pd.virt[pd_entry])->pt_entry[pt_entry] & 0xFFFFF000) + ((uint32_t)header & 0xFFF);
                 }
 
                 // now we can return the header
@@ -368,8 +436,16 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
             }
         }
     }
-    // if we get here, we couldn't find a header that was big enough
-    return NULL;
+
+    // We couldn't find a header that was big enough, so we need to expand the heap
+    heap_expand();
+    if (prealloc_table == NULL) {
+        prealloc_table = (page_table_t *)kmalloc_ap(sizeof(page_table_t), &prealloc_phys);
+    }
+    if (prealloc_bitmap == NULL) {
+        prealloc_bitmap = (bitmap_1024_t *)kmalloc(sizeof(bitmap_1024_t));
+    }
+    return kmalloc_int(size, align, phys);
 }
 
 void kfree(void *ptr)

@@ -7,3 +7,4 @@
 isodir
 dbg_isodir
 settings.json
+*.dbs

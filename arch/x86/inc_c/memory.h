@@ -19,5 +19,6 @@ void *kmalloc_ap(uint32_t size, uint32_t *phys);
 void kfree(void *ptr);
 void heap_dump();
 page_table_entry_t first_free_page();
+void alloc_page(uint32_t virt, uint32_t phys, bool make);
 
 #endif
