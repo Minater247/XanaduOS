@@ -8,3 +8,4 @@ isodir
 dbg_isodir
 settings.json
 *.dbs
+ramdisk.img

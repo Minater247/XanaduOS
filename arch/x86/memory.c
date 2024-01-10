@@ -97,8 +97,6 @@ void memory_initialize(multiboot_info_t *mboot_info)
         total_mem_size += mmap->len;
     }
 
-    terminal_printf("Total memory: %d MB\n", total_mem_size / 1024 / 1024);
-
     //it's time - clear first 2 entries in page directory
     page_directory[0] = 0;
     page_directory[1] = 0;
@@ -157,7 +155,6 @@ void memory_initialize(multiboot_info_t *mboot_info)
         //set up the bitmap
         page_directory_bitmaps[entry.pd_entry] = (bitmap_1024_t *)kmalloc(sizeof(bitmap_1024_t));
         memset(page_directory_bitmaps[entry.pd_entry]->bitmap, 0xFF, sizeof(page_directory_bitmaps[entry.pd_entry]->bitmap));
-        terminal_printf("Mapped memory expanded to 12MB\n");
     }
 
     prealloc_table = (page_table_t *)kmalloc_ap(sizeof(page_table_t), &prealloc_phys);
@@ -179,8 +176,6 @@ void memory_initialize(multiboot_info_t *mboot_info)
     kheap->free = true;
     kheap->next = NULL;
     kheap->prev = NULL;
-
-    heap_dump();
 }
 
 

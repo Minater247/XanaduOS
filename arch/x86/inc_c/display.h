@@ -30,7 +30,6 @@
 #define TERMCOLOR_ERROR VGA_ENTRY_COLOR(VGA_COLOR_WHITE, VGA_COLOR_RED)
 #define TERMCOLOR_SUCCESS VGA_ENTRY_COLOR(VGA_COLOR_BLACK, VGA_COLOR_GREEN)
 
-size_t strlen(const char* str);
 void terminal_initialize(void);
 void terminal_putentryat(char c, uint8_t color, size_t x, size_t y);
 void terminal_putchar(char c);

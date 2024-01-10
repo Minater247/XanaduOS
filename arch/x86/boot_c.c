@@ -8,6 +8,8 @@
 #include "inc_c/memory.h"
 #include "inc_c/string.h"
 #include "../../kernel/include/errors.h"
+#include "inc_c/ramdisk.h"
+#include "inc_c/serial.h"
 
 extern uint32_t given_magic;
 extern uint32_t given_mboot;
@@ -28,6 +30,7 @@ void boot_initialize() {
     hardware_initialize();
 
     terminal_initialize();
+    serial_initialize();
 
     if (magic != MULTIBOOT_BOOTLOADER_MAGIC)
     {
@@ -331,12 +334,9 @@ void boot_initialize() {
     terminal_printf("%dKB lower memory\n", mboot_info->mem_lower);
     terminal_printf("%dKB upper memory (%dMB)\n", mboot_info->mem_upper, mboot_info->mem_upper / 1024);
 
-    terminal_printf("\033[0mTesting colors...\n");
-    terminal_printf("\033[40m \033[41m \033[42m \033[43m \033[44m \033[45m \033[46m \033[47m \033[100m \033[101m \033[102m \033[103m \033[104m \033[105m \033[106m \033[107m \n");
-
-    terminal_printf("\033[0mHeap time!\n");
-
     memory_initialize(mboot_info);
+
+    ramdisk_initialize(mboot_info);
 
     asm volatile("sti");
 }

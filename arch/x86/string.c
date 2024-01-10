@@ -76,3 +76,43 @@ char* itoa(int num, char *buffer, int base) {
 
     return buffer;
 }
+
+//strcmp (x86)
+int strcmp(const char *str1, const char *str2) {
+    while (*str1 && (*str1 == *str2)) {
+        str1++;
+        str2++;
+    }
+    return *(unsigned char*)str1 - *(unsigned char*)str2;
+}
+
+//strncmp
+int strncmp(const char *str1, const char *str2, size_t n) {
+    while (n && *str1 && (*str1 == *str2)) {
+        str1++;
+        str2++;
+        n--;
+    }
+    if (n == 0) {
+        return 0;
+    }
+    return *(unsigned char*)str1 - *(unsigned char*)str2;
+}
+
+//memcpy
+void *memcpy(void *dest, const void *src, size_t n) {
+    //use movsb to copy byte by byte
+    asm volatile("cld; rep movsb"
+                 : "+D"(dest), "+S"(src), "+c"(n)
+                 :
+                 : "memory");
+    return dest;
+}
+
+size_t strlen(const char *str)
+{
+    size_t len = 0;
+    while (str[len])
+        len++;
+    return len;
+}

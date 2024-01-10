@@ -1,0 +1,276 @@
+#include <stdint.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include "include/errors.h"
+#include "inc_c/string.h"
+#include "include/filesystem.h"
+#include "inc_c/memory.h"
+
+fs_node_t head_node = {NULL, NULL};
+mount_point_t head_mount_point = {NULL, NULL, NULL};
+uint32_t fs_id = 0;
+uint32_t file_id = 0;
+
+void get_path_item(char *path, char *retbuf, uint8_t item) {
+    uint8_t i = 0;
+    uint8_t j = 0;
+    uint8_t item_num = 0;
+    while (path[i] == '/') {
+        i++;
+    }
+    while (path[i] != '\0') {
+        if (path[i] == '/') {
+            if (item_num == item) {
+                retbuf[j] = '\0';
+                return;
+            }
+            item_num++;
+            j = 0;
+        } else {
+            retbuf[j] = path[i];
+            j++;
+        }
+        i++;
+    }
+    retbuf[j] = '\0';
+}
+
+uint32_t get_path_length(char *path) {
+    uint32_t i = 0;
+    uint32_t length = 0;
+    while (path[i] == '/') {
+        i++;
+    }
+    while (path[i] != '\0') {
+        if (path[i] == '/') {
+            length++;
+        }
+        i++;
+    }
+    return length;
+}
+
+uint32_t next_id() {
+    //if we've used all the ids, panic
+    if (fs_id == 0xFFFFFFFE) {
+        kpanic("Out of filesystem ids!\n");
+    }
+    fs_id++;
+    return fs_id;
+}
+
+uint32_t next_file_id() {
+    //if we've used all the ids, panic
+    if (file_id == 0xFFFFFFFE) {
+        kpanic("Out of file ids!\n");
+    }
+    file_id++;
+    return file_id;
+}
+
+int register_filesystem(filesystem_t *to_register) {
+    to_register->identifier = next_id();
+    if (head_node.fs == NULL) {
+        head_node.fs = to_register;
+        head_node.next = NULL;
+        return (int)to_register->identifier;
+    } else {
+        fs_node_t *cur_node = &head_node;
+        while (cur_node->next != NULL) {
+            cur_node = cur_node->next;
+        }
+        cur_node->next = (fs_node_t*)kmalloc(sizeof(fs_node_t));
+        cur_node->next->fs = to_register;
+        cur_node->next->next = NULL;
+        return (int)to_register->identifier;
+    }
+}
+
+int unregister_filesystem(uint32_t filesystem_id) {
+    fs_node_t *cur_node = &head_node;
+    fs_node_t *prev_node = NULL;
+    while (cur_node != NULL) {
+        if (cur_node->fs->identifier == filesystem_id) {
+            break;
+        }
+        prev_node = cur_node;
+        cur_node = cur_node->next;
+    }
+    if (cur_node == NULL) {
+        return -1;
+    }
+    if (prev_node == NULL) {
+        head_node = *cur_node->next;
+    } else {
+        prev_node->next = cur_node->next;
+    }
+    kfree(cur_node);
+    return 0;
+}
+
+int mount_filesystem(uint32_t filesystem_id, char *path) {
+    fs_node_t *cur_node = &head_node;
+    while (cur_node != NULL) {
+        if (cur_node->fs->identifier == filesystem_id) {
+            break;
+        }
+        cur_node = cur_node->next;
+    }
+    if (cur_node == NULL) {
+        return -1;
+    }
+    while (path[0] == '/') {
+        path++;
+    }
+    if (head_mount_point.path == NULL) {
+        head_mount_point.path = path;
+        head_mount_point.fs = cur_node->fs;
+        head_mount_point.next = NULL;
+        return 0;
+    } else {
+        mount_point_t *cur_mount_point = &head_mount_point;
+        while (cur_mount_point->next != NULL) {
+            cur_mount_point = cur_mount_point->next;
+        }
+        cur_mount_point->next = (mount_point_t*)kmalloc(sizeof(mount_point_t));
+        cur_mount_point->next->path = path;
+        cur_mount_point->next->fs = cur_node->fs;
+        cur_mount_point->next->next = NULL;
+        return 0;
+    }
+}
+
+int unmount_filesystem_by_id(uint32_t filesystem_id) {
+    mount_point_t *cur_mount_point = &head_mount_point;
+    mount_point_t *prev_mount_point = NULL;
+    while (cur_mount_point != NULL) {
+        if (cur_mount_point->fs->identifier == filesystem_id) {
+            break;
+        }
+        prev_mount_point = cur_mount_point;
+        cur_mount_point = cur_mount_point->next;
+    }
+    if (cur_mount_point == NULL) {
+        return -1;
+    }
+    if (prev_mount_point == NULL) {
+        head_mount_point = *cur_mount_point->next;
+    } else {
+        prev_mount_point->next = cur_mount_point->next;
+    }
+    kfree(cur_mount_point);
+    return 0;
+}
+
+int unmount_filesystem_by_path(char *path) {
+    mount_point_t *cur_mount_point = &head_mount_point;
+    mount_point_t *prev_mount_point = NULL;
+    while (cur_mount_point != NULL) {
+        if (!strcmp(cur_mount_point->path, path)) {
+            break;
+        }
+        prev_mount_point = cur_mount_point;
+        cur_mount_point = cur_mount_point->next;
+    }
+    if (cur_mount_point == NULL) {
+        return -1;
+    }
+    if (prev_mount_point == NULL) {
+        head_mount_point = *cur_mount_point->next;
+    } else {
+        prev_mount_point->next = cur_mount_point->next;
+    }
+    kfree(cur_mount_point);
+    return 0;
+}
+
+file_descriptor_t fopen(char *path, uint32_t flags) {
+    // Check whether this path matches a mount point
+    mount_point_t *cur_mount_point = &head_mount_point;
+    while (path[0] == '/') {
+        path++;
+    }
+    int len;
+    while (cur_mount_point != NULL) {
+        len = strlen(cur_mount_point->path);
+        terminal_printf("Comparing %s to %s\n", path, cur_mount_point->path);
+        if (!strncmp(path, cur_mount_point->path, len - 1)) { //len by itself causes a #GP for... some reason. (check on this if it becomes a problem)
+            path += len;
+            break;
+        }
+        cur_mount_point = cur_mount_point->next;
+    }
+    if (cur_mount_point == NULL) {
+        //TODO: allow setting up default filesystem for non-mounted paths
+        file_descriptor_t ret = {0, 0, NULL, NULL};
+        ret.flags |= FILE_NOTFOUND_FLAG;
+        return ret;
+    }
+
+    file_descriptor_t ret;
+    filesystem_t *fs = cur_mount_point->fs;
+    ret.fs = fs;
+    ret.fs_data = fs->open(path, flags);
+    ret.flags = *(uint32_t*)ret.fs_data;
+    ret.id = next_file_id();
+    return ret;
+}
+
+int fread(char *buf, uint32_t size, uint32_t count, file_descriptor_t *fd) {
+    return fd->fs->read(buf, size, count, fd->fs_data);
+}
+
+int fclose(file_descriptor_t *fd) {
+    return fd->fs->close(fd->fs_data);
+}
+
+dir_descriptor_t fopendir(char *path, uint32_t flags) {
+    //get the mount point
+    mount_point_t *cur_mount_point = &head_mount_point;
+    while (path[0] == '/') {
+        path++;
+    }
+    int len;
+    while (cur_mount_point != NULL) {
+        len = strlen(cur_mount_point->path);
+        if (!strncmp(path, cur_mount_point->path, len - 1)) { //len-1 to prevent #GP
+            path += len;
+            break;
+        }
+        cur_mount_point = cur_mount_point->next;
+    }
+    if (cur_mount_point == NULL) {
+        //TODO: allow setting up default filesystem for non-mounted paths
+        dir_descriptor_t ret = {0, 0, NULL, NULL};
+        ret.flags |= FILE_NOTFOUND_FLAG;
+        return ret;
+    }
+
+    dir_descriptor_t ret;
+    filesystem_t *fs = cur_mount_point->fs;
+    ret.fs = fs;
+    ret.id = next_file_id();
+    ret.fs_data = fs->opendir(path, flags);
+    ret.flags = *(uint32_t*)ret.fs_data;
+    return ret;
+}
+
+simple_return_t freaddir(dir_descriptor_t *dd) {
+    return dd->fs->readdir(dd->fs_data);
+}
+
+int fclosedir(dir_descriptor_t *dd) {
+    return dd->fs->closedir(dd->fs_data);
+}
+
+uint32_t fgetsize(void *fd) {
+    return ((file_descriptor_t*)fd)->fs->getsize(((file_descriptor_t*)fd)->fs_data);
+}
+
+int fseek(file_descriptor_t *fd, uint32_t offset, uint8_t whence) {
+    return fd->fs->seek(fd->fs_data, offset, whence);
+}
+
+int ftell(file_descriptor_t *fd) {
+    return fd->fs->tell(fd->fs_data);
+}

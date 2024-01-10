@@ -47,6 +47,7 @@ iso: all
 	@if [ $$(stat -c%s kernel.bin) -gt 8388608 ]; then echo kernel.bin is too large! Add more pages; exit 1; fi
 	mkdir -p isodir/boot/grub
 	cp kernel.bin isodir/boot/kernel.bin
+	cp ramdisk.img isodir/boot/ramdisk.img
 	cp arch/$(ARCH)/grub.cfg isodir/boot/grub/grub.cfg
 	grub-mkrescue -o os.iso isodir
 
@@ -57,11 +58,12 @@ debug_iso: all_debug
 	@if [ $$(stat -c%s kernel.bin) -gt 8388608 ]; then echo kernel.bin is too large! Add more pages; exit 1; fi
 	mkdir -p dbg_isodir/boot/grub
 	cp kernel.bin dbg_isodir/boot/kernel.bin
+	cp ramdisk.img dbg_isodir/boot/ramdisk.img
 	cp arch/$(ARCH)/grub.cfg dbg_isodir/boot/grub/grub.cfg
 	grub-mkrescue -o os_dbg.iso dbg_isodir
 
 run: iso
-	qemu-system-i386 -cdrom os.iso
+	qemu-system-i386 -cdrom os.iso -serial file:serial.out
 
 # Debugging should output logs to ./q_debug.log
 debug: debug_iso
@@ -77,3 +79,10 @@ clean:
 
 crun: clean run
 cdbg: clean debug
+
+FORCE:
+
+ramdisk: FORCE
+	@echo "Creating ramdisk..."
+	@python3 buildutils/ramdisk.py ramdisk.img ./ramdisk
+	@echo "Done."

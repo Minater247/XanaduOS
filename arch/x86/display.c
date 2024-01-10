@@ -7,14 +7,6 @@
 #include "inc_c/io.h"
 #include "inc_c/string.h"
 
-size_t strlen(const char *str)
-{
-    size_t len = 0;
-    while (str[len])
-        len++;
-    return len;
-}
-
 static const size_t VGA_WIDTH = 80;
 static const size_t VGA_HEIGHT = 25;
 
@@ -86,6 +78,10 @@ void terminal_putchar(char c)
             }
         }
         terminal_putentryat(' ', terminal_color, terminal_column, terminal_row);
+        return;
+    } else if (c == '\r')
+    {
+        terminal_column = 0;
         return;
     }
     terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
