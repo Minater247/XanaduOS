@@ -22,6 +22,8 @@ void kernel_main() {
 		while (true);
 	}
 
+	terminal_printf("Valid file!");
+
 	//set color to lime
 	terminal_printf("\033[32m");
 	int read = fread(buf2, 1, 100, &fd);
@@ -33,6 +35,32 @@ void kernel_main() {
 		}
 		read = fread(buf2, 1, 100, &fd);
 	}
+	fclose(&fd);
+
+	//set color to white
+	terminal_printf("\n\033[0m");
+	dir_descriptor_t dd = fopendir("/mnt/ramdisk/", 0);
+	if (dd.flags & FILE_NOTFOUND_FLAG || !(dd.flags & FILE_ISOPENDIR_FLAG))
+	{
+		terminal_printf("Directory not found!\n");
+		while (true);
+	}
+
+	//print the contents
+	terminal_printf("Valid directory!\n");
+	terminal_printf("Contents:\n");
+	simple_return_t ret = freaddir(&dd);
+	while (!(ret.flags & FILE_NOTFOUND_FLAG))
+	{
+		terminal_printf(ret.name);
+		terminal_printf("\n");
+		ret = freaddir(&dd);
+	}
+	fclosedir(&dd);
+
+
+
+
 
 	char buf[2] = {0, 0};
 	while (true) {

@@ -41,6 +41,9 @@ uint32_t get_path_length(char *path) {
     while (path[i] == '/') {
         i++;
     }
+    if (path[i] != '\0') {
+        length++;
+    }
     while (path[i] != '\0') {
         if (path[i] == '/') {
             length++;

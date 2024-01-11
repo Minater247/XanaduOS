@@ -23,20 +23,29 @@
 
 #define FILE_ENTRY_MAGIC 0xBAE7
 #define DIR_ENTRY_MAGIC 0x7EAB
-#define DIR_END_MAGIC 0x7EAC
 
-//structs should be packed with __attribute__((packed)) to avoid padding
 typedef struct {
+    uint32_t disk_sz;
     uint32_t num_files;
-    uint32_t file_list_length;
-} __attribute__((packed)) ramdisk_header_t;
+    uint32_t headers_len;
+    uint32_t num_root_files;
+} __attribute__((packed)) ramdisk_size_t;
 
 typedef struct {
     uint16_t magic;
     uint32_t offset;
     char name[64];
     uint32_t length;
-} __attribute__((packed)) ramdisk_file_entry_t; //internal representation of a file
+    uint8_t reserved[6];
+} __attribute__((packed)) ramdisk_file_header_t;
+
+typedef struct {
+    uint16_t magic;
+    uint32_t num_files;
+    char name[64];
+    uint32_t num_blocks;
+    uint8_t reserved[6];
+} __attribute__((packed)) ramdisk_dir_header_t;
 
 typedef struct {
     uint32_t flags;
@@ -44,7 +53,7 @@ typedef struct {
     uint32_t length;
     uint32_t addr;
     uint32_t seek_pos;
-} __attribute__((packed)) ramdisk_file_t; //external representation of a file
+} __attribute__((packed)) ramdisk_file_t;
 
 typedef struct {
     uint32_t flags;
@@ -52,14 +61,9 @@ typedef struct {
     uint32_t num_files;
     uint32_t idx;
     void *files;
-} __attribute__((packed)) ramdisk_dir_t; //external representation of a directory
-//Directories have no internal representation due to their variable data contents length.
-
-//dir entry isn't really like something that can be represented with a struct,
-//so we don't have one for it
+} __attribute__((packed)) ramdisk_dir_t;
 
 void ramdisk_initialize();
-void ramdisk_test();
 ramdisk_file_t *ropen(char *path, uint32_t flags);
 int rread(void *ptr, uint32_t size, uint32_t nmemb, ramdisk_file_t *file);
 int rseek(ramdisk_file_t *file, uint32_t offset, uint8_t whence);

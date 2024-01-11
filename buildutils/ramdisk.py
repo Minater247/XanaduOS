@@ -1,186 +1,203 @@
-# This script generates a ramdisk image from the ./ramdisk directory. Presently, the ramdisk
-# is an uncompressed custom format.
-
-#The format of a ramdisk is as follows:
-#- The first 4 bytes are the number of files in the ramdisk (uint32)
-#- The next 4 bytes are the length of the file list (uint32)
-#- A list of file entries or directory entries
-
-#A file entry is as follows:
-#  - 2 bytes: a magic number declaring this is a file entry (uint16)
-#  - 4 bytes: the offset of the file in the ramdisk (uint32)
-#  - 64 bytes: the name of the file (null terminated)
-#  - 4 bytes: the length of the file (uint32)
-
-#A directory entry is as follows:
-#  - 2 bytes: a magic number declaring this is a directory entry (uint16)
-#  - 64 bytes: the name of the directory (null terminated)
-#  - 4 bytes: the number of files in the directory (uint32)
-#  - The file and directory entries for the directory
-#  - 2 bytes: a magic number declaring the end of the directory (uint16)
-
-#The ramdisk is then padded to a multiple of 512 bytes with 0s.
-
-#The program should ask for the output file name and the ramdisk directory. If
-#the ramdisk directory is not specified, it should default to ./ramdisk.
+# Ramdisk creation tool.
+# Follows the format defined in doc/format/ramdisk.txt
 
 import os
-import struct
 import sys
+import struct
 
-#Magic numbers
-FILE_ENTRY = 0xBAE7
-DIR_ENTRY = 0x7EAB
-DIR_EXIT = 0x7EAC
+# Ramdisk format:
+# - uint32_t total_sz
+# - uint32_t num_files
+# - uint32_t headers_sz
+# - uint32_t num_root_files
+# :FILE HEADERS:
+# :FILE DATA:
 
-def main():
-    #Get the output file name
-    if len(sys.argv) < 3:
-        print("Usage: ramdisk.py output [ramdiskDir]")
-        return
-    if len(sys.argv) > 2:
-        output = sys.argv[1]
-        ramdiskDir = sys.argv[2]
+# File header format:
+# --------------------------------
+# 0   FILE_ENTRY                 -
+# --------------------------------
+# 2   File Offset                -
+# --------------------------------
+# 6   File Name                  -
+# --------------------------------
+# 70  File Length                -
+# --------------------------------
+# 74  Reserved                   -
+# --------------------------------
+
+# Directory header format:
+# --------------------------------
+# 0   DIR_ENTRY                  -
+# --------------------------------
+# 2   Num. Files Contained       -
+# --------------------------------
+# 6   Directory Name             -
+# --------------------------------
+# 70  Number of Blocks Contained -
+# --------------------------------
+# 74  Reserved                   -
+# --------------------------------
+
+# Each header is 80 bytes long for future expansion.
+
+def main(argv):
+    if len(argv) < 2:
+        print("Usage: ramdisk.py [output] [dir]")
+        return 1
+    if len(argv) == 1:
+        output = "./ramdisk.bin"
     else:
-        ramdiskDir = "./ramdisk"
+        output = argv[1]
+    if len(argv) == 2:
+        directory = "./ramdisk"
+    else:
+        directory = argv[2]
 
-    print("Ramdisk dir:")
-    print(ramdiskDir)
+    print("input: {}".format(directory))
+    print("output: {}".format(output))
 
-    file_tree = []
-    def get_file_tree(path):
-        tree = []
-        for file in os.listdir(path):
-            if os.path.isdir(path + "/" + file):
-                tree.append([file, get_file_tree(path + "/" + file)])
+
+    if not os.path.isdir(directory):
+        print("Error: {} is not a directory.".format(directory))
+        return 1
+
+    # Get the tree structure of the directory
+    def tree_branch(tree = [], path = directory):
+        for item in os.listdir(path):
+            item_path = os.path.join(path, item)
+            if os.path.isdir(item_path):
+                tree.append([(item, "DIR"), tree_branch([], item_path)])
             else:
-                tree.append(file)
+                tree.append((item, "FILE"))
         return tree
 
-    file_tree = get_file_tree(ramdiskDir)
+    tree = tree_branch()
 
-    def print_tree(tree, indent):
-        for file in tree:
-            if type(file) is list:
-                print(indent + file[0])
-                print_tree(file[1], indent + "    ")
-            else:
-                print(indent + file)
+    print(tree)
 
-    print("")
-    print_tree(file_tree, "")
+    global headers_num
+    global num_files
 
-    #Open the output file
-    f = open(output, "wb")
-
-    #Write the header
     num_files = 0
-    def count_files(tree):
-        count = 0
-        for file in tree:
-            if type(file) is list:
-                count += count_files(file[1])
-            else:
-                count += 1
-        return count
-    
-    num_files = count_files(file_tree)
-    f.write(struct.pack("<I", num_files))
+    headers_num = 0
+    order = []
+    header_sz_dict = {}
+    def order_recursive(inp, path=""):
+        global headers_num
+        global num_files
+        if type(inp) is tuple:
+            order.append(path + inp[0])
+            num_files += 1
+            headers_num += 1
+            return
+        headers_pre = headers_num
+        for item in inp:
+            if type(item) is tuple:
+                order.append(path + item[0])
+                num_files += 1
+                headers_num += 1
+                continue
+            this_dir = item[0][0]
+            order.append(path + this_dir + "/")
+            headers_num += 1
+            order_recursive(item[1], path + this_dir + "/")
+        header_sz_dict[path] = headers_num - headers_pre
 
-    #Create a second buffer to write the file list to
-    file_list = bytearray()
 
-    #Write the file list
-    def write_file_list_old(tree, offset):
-        for file in tree:
-            if type(file) is list:
-                #Write the directory entry
-                file_list.extend(struct.pack("<H", DIR_ENTRY))
-                file_list.extend(file[0].encode("utf-8"))
-                file_list.extend(b"\0" * (64 - len(file[0])))
-                file_list.extend(struct.pack("<I", count_files(file[1])))
-                offset = write_file_list(file[1], offset)
-                file_list.extend(struct.pack("<H", DIR_EXIT))
-            else:
-                #Write the file entry
-                file_list.extend(struct.pack("<H", FILE_ENTRY))
-                file_list.extend(struct.pack("<I", offset))
-                file_list.extend(file.encode("utf-8"))
-                file_list.extend(b"\0" * (64 - len(file)))
-                file_size = os.path.getsize(ramdiskDir + "/" + file)
-                file_list.extend(struct.pack("<I", file_size))
-                offset += file_size
-        return offset
+    order_recursive(tree)
 
-    #Better write_file_list, that takes into account what the parent directory/ies are
-    #when opening a file (because for something like "./ramdisk/nested/file.txt", the file
-    #is actually opened as ".ramdisk/file.txt", not "./ramdisk/nested/file.txt")
-    #This should probably be rewritten to take a path argument as well
-    def write_file_list(tree, offset, path):
-        for file in tree:
-            if type(file) is list:
-                #Write the directory entry
-                file_list.extend(struct.pack("<H", DIR_ENTRY))
-                file_list.extend(file[0].encode("utf-8"))
-                file_list.extend(b"\0" * (64 - len(file[0])))
-                file_list.extend(struct.pack("<I", count_files(file[1])))
-                offset = write_file_list(file[1], offset, path + "/" + file[0])
-                file_list.extend(struct.pack("<H", DIR_EXIT))
-                #throw an error if the file name contains a magic number
-                if "\xBA\xE7" in file[0]:
-                    print("Error: directory name contains magic number")
-                    return
-                if "\x7E\xAB" in file[0]:
-                    print("Error: directory name contains magic number")
-                    return
-                if "\x7E\xAC" in file[0]:
-                    print("Error: directory name contains magic number")
-                    return
-            else:
-                #Write the file entry
-                file_list.extend(struct.pack("<H", FILE_ENTRY))
-                file_list.extend(struct.pack("<I", offset))
-                file_list.extend(file.encode("utf-8"))
-                file_list.extend(b"\0" * (64 - len(file)))
-                file_size = os.path.getsize(ramdiskDir + path + "/" + file)
-                file_list.extend(struct.pack("<I", file_size))
-                offset += file_size
-                #throw an error if the file name contains a magic number
-                if "\xBA\xE7" in file:
-                    print("Error: file name contains magic number")
-                    return
-                if "\x7E\xAB" in file:
-                    print("Error: file name contains magic number")
-                    return
-                if "\x7E\xAC" in file:
-                    print("Error: file name contains magic number")
-                    return
-        return offset
+    print(order)
+    print(header_sz_dict)
 
-    write_file_list(file_tree, 0, "")
+    # Begin writing the ramdisk to an in-memory buffer
+    ramdisk = bytearray()
 
-    #Write the file list length
-    f.write(struct.pack("<I", len(file_list)))
+    # We don't know the size of the ramdisk yet, so we'll just write a placeholder
+    ramdisk.extend(struct.pack("<I", 0))
+    # Write the number of files
+    ramdisk.extend(struct.pack("<I", num_files))
+    # Write the size of the headers
+    ramdisk.extend(struct.pack("<I", (headers_num * 80) + 16))
+    # Number of files/directories in the root directory
+    ramdisk.extend(struct.pack("<I", len(tree)))
 
-    #Write the file list
-    f.write(file_list)
+    # Write the headers
+    # FILE_ENTRY = 0xBAE7
+    # DIR_ENTRY = 0x7EAB
+    file_bytepos = 0
+    for i in range(len(order)):
+        if order[i][-1] == "/":
+            print("Directory: {}".format(order[i]))
+            # This is a directory
+            ramdisk.extend(struct.pack("<H", 0x7EAB)) # 2 bytes
+            # Find the number of files within this level of the tree
+            num_files = 0
+            for j in range(i + 1, len(order)):
+                if order[j].startswith(order[i]):
+                    num_files += 1
+                else:
+                    break
+            ramdisk.extend(struct.pack("<I", num_files)) # 4 bytes
+            # 64-byte name (including null terminator)
+            sent_name = order[i]
+            if order[i][-1] == "/":
+                sent_name = order[i][:-1]
+            # If there are multiple path components, we only want the last one
+            if "/" in sent_name:
+                sent_name = sent_name.split("/")[-1]
+            if len(sent_name) > 63:
+                print("Error: Directory name {} is too long.".format(sent_name))
+                return 1
+            ramdisk.extend(sent_name.encode("ascii")) # 64 bytes
+            ramdisk.extend(b"\x00" * (64 - len(sent_name))) # - - - why + 1? idk. Does it fix it? yes.
+            # Number of blocks contained
+            ramdisk.extend(struct.pack("<I", header_sz_dict[order[i]])) # 4 bytes
+            # Reserved through 80 bytes
+            ramdisk.extend(b"\x00" * 6)
+        else:
+            print("File: {}".format(order[i]))
+            ramdisk_pre_len = len(ramdisk)
+            # This is a file
+            ramdisk.extend(struct.pack("<H", 0xBAE7)) # 2 bytes
+            # File offset
+            ramdisk.extend(struct.pack("<I", file_bytepos)) # 4 bytes
+            file_bytepos += os.path.getsize(os.path.join(directory, order[i]))
+            # 64-byte name (including null terminator)
+            sent_name = order[i]
+            if order[i][-1] == "/":
+                sent_name = order[i][:-1]
+            # If there are multiple path components, we only want the last one
+            if "/" in sent_name:
+                sent_name = sent_name.split("/")[-1]
+            if len(sent_name) > 63:
+                print("Error: File name {} is too long.".format(sent_name))
+                return 1
+            ramdisk.extend(sent_name.encode("ascii")) # 64 bytes
+            ramdisk.extend(b"\x00" * (64 - len(sent_name))) # - - -
+            # File length
+            ramdisk.extend(struct.pack("<I", os.path.getsize(os.path.join(directory, order[i])))) # 4 bytes
+            # Reserved through 80 bytes
+            ramdisk.extend(b"\x00" * 6)
+            
+    # We now know the size of the ramdisk, so we can write it to the beginning
+    ramdisk[0:4] = struct.pack("<I", len(ramdisk) + file_bytepos)
 
-    #Write the files
-    def write_files(tree, path):
-        for file in tree:
-            if type(file) is list:
-                write_files(file[1], path + "/" + file[0])
-            else:
-                f.write(open(ramdiskDir + path + "/" + file, "rb").read())
+    # Write the files
+    for i in range(len(order)):
+        if order[i][-1] == "/":
+            continue
+        with open(os.path.join(directory, order[i]), "rb") as f:
+            ramdisk.extend(f.read())
 
-    write_files(file_tree, "")
+    # Write the ramdisk to the output file
+    with open(output, "wb") as f:
+        f.write(ramdisk)
 
-    #Pad the file to a multiple of 512 bytes
-    f.write(b"\0" * (512 - (f.tell() % 512)))
+    return 0
 
-    #Close the file
-    f.close()
+
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main(sys.argv))

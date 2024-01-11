@@ -9,3 +9,4 @@ dbg_isodir
 settings.json
 *.dbs
 ramdisk.img
+serial.out
