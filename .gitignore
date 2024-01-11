@@ -10,3 +10,4 @@ settings.json
 *.dbs
 ramdisk.img
 serial.out
+com1.out

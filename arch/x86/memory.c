@@ -70,6 +70,21 @@ void memory_initialize(multiboot_info_t *mboot_info)
 {
     kassert_msg(mboot_info->flags & MULTIBOOT_INFO_MEM_MAP, "No memory map provided by bootloader.");
 
+    //look for the ramdisk in modules to ensure we don't overwrite it
+    multiboot_module_t *module;
+    for (module = (multiboot_module_t *)mboot_info->mods_addr;
+         (uint32_t)module < mboot_info->mods_addr + mboot_info->mods_count * sizeof(multiboot_module_t);
+         module = (multiboot_module_t *)((uint32_t)module + sizeof(multiboot_module_t)))
+    {
+        if (strcmp((char *)module->cmdline, "RAMDISK") == 0)
+        {
+            if (module->mod_end > kheap_end)
+            {
+                kheap_end = module->mod_end;
+            }
+        }
+    }
+
     multiboot_memory_map_t *mmap;
     for (mmap = (multiboot_memory_map_t *)mboot_info->mmap_addr;
          (uint32_t)mmap < mboot_info->mmap_addr + mboot_info->mmap_length;
@@ -80,15 +95,15 @@ void memory_initialize(multiboot_info_t *mboot_info)
             if (!memory_map)
             {
                 memory_map = (memory_region_t *)kmalloc(sizeof(memory_region_t));
-                memory_map->start = mmap->addr + 0xC0000000;
-                memory_map->end = mmap->addr + mmap->len + 0xC0000000;
+                memory_map->start = mmap->addr;
+                memory_map->end = mmap->addr + mmap->len;
                 memory_map->next = NULL;
             }
             else
             {
                 memory_region_t *new_region = (memory_region_t *)kmalloc(sizeof(memory_region_t));
-                new_region->start = mmap->addr + 0xC0000000;
-                new_region->end = mmap->addr + mmap->len + 0xC0000000;
+                new_region->start = mmap->addr;
+                new_region->end = mmap->addr + mmap->len;
                 new_region->next = memory_map;
                 memory_map = new_region;
             }
@@ -160,7 +175,7 @@ void memory_initialize(multiboot_info_t *mboot_info)
     prealloc_table = (page_table_t *)kmalloc_ap(sizeof(page_table_t), &prealloc_phys);
     memset(prealloc_table->pt_entry, 0, sizeof(prealloc_table->pt_entry));
     prealloc_bitmap = (bitmap_1024_t *)kmalloc(sizeof(bitmap_1024_t));
-    memset(prealloc_bitmap->bitmap, 0xFF, sizeof(prealloc_bitmap->bitmap));
+    memset(prealloc_bitmap->bitmap, 0, sizeof(prealloc_bitmap->bitmap));
 
     //set up the heap
     kheap = (heap_header_t *)kheap_end;
@@ -200,6 +215,10 @@ page_table_entry_t first_free_page()
     {
         if (page_directory_bitmaps[i] == NULL)
         {
+            if (!is_in_usable_memory(i * 1024 * 1024))
+            {
+                continue;
+            }
             return (page_table_entry_t){.pd_entry = i, .pt_entry = 0};
         } else if (kernel_pd.is_full[i]) {
             continue;
@@ -227,7 +246,7 @@ page_table_entry_t first_free_page()
 
 
 //allocate a page of memory
-void alloc_page(uint32_t virt, uint32_t phys, bool make) {
+void alloc_page(uint32_t virt, uint32_t phys, bool make, bool is_kernel, bool is_writeable) {
     //get the page directory entry
     uint32_t pd_entry = virt >> 22;
     uint32_t pt_entry = (virt >> 12) & 0x3FF;
@@ -239,7 +258,13 @@ void alloc_page(uint32_t virt, uint32_t phys, bool make) {
         kassert(prealloc_table != NULL);
         //we already have a preallocated space for this page table
         kernel_pd.virt[pd_entry] = (uint32_t)prealloc_table;
-        kernel_pd.entries[pd_entry] = prealloc_phys | 0x3;
+        kernel_pd.entries[pd_entry] = prealloc_phys | 0x1;
+        if (!is_kernel) {
+            kernel_pd.entries[pd_entry] |= 0x4;
+        }
+        if (is_writeable) {
+            kernel_pd.entries[pd_entry] |= 0x2;
+        }
         kernel_pd.is_full[pd_entry] = false;
         prealloc_table = NULL;
     }
@@ -251,18 +276,26 @@ void alloc_page(uint32_t virt, uint32_t phys, bool make) {
     ((page_table_t *)(kernel_pd.virt[pd_entry]))->pt_entry[pt_entry] = phys | 0x3;
 
     //if the bitmap doesn't exist, use the preallocated one
-    if (page_directory_bitmaps[pd_entry] == NULL) {
-        page_directory_bitmaps[pd_entry] = prealloc_bitmap;
+    uint32_t phys_pd_entry = phys >> 22;
+    uint32_t phys_pt_entry = (phys >> 12) & 0x3FF;
+    if (page_directory_bitmaps[phys_pd_entry] == NULL) {
+        page_directory_bitmaps[phys_pd_entry] = prealloc_bitmap;
+        kernel_pd.is_full[phys_pd_entry] = false;
         prealloc_bitmap = NULL;
     }
 
     //set the bitmap
-    page_directory_bitmaps[pd_entry]->bitmap[pt_entry / 32] |= (1 << (pt_entry % 32));
+    page_directory_bitmaps[phys_pd_entry]->bitmap[phys_pt_entry / 32] |= (1 << (phys_pt_entry % 32));
 
     //check if the page directory entry is full
-    if (page_directory_bitmaps[pd_entry]->bitmap[pt_entry / 32] == 0xFFFFFFFF) {
-        kernel_pd.is_full[pd_entry] = true;
+    for (uint32_t i = 0; i < 32; i++) {
+        if (page_directory_bitmaps[phys_pd_entry]->bitmap[i] != 0xFFFFFFFF) {
+            return;
+        }
     }
+    //the page directory entry is full
+    kernel_pd.is_full[phys_pd_entry] = true;
+    return;
 }
 
 
@@ -272,7 +305,7 @@ void heap_expand() {
     page_table_entry_t entry = first_free_page();
 
     for (uint32_t i = 0; i < 1024; i++) {
-        alloc_page(alloc_location + i * 0x1000, (entry.pd_entry * 0x400000) + (entry.pt_entry * 0x1000) + i * 0x1000, true);
+        alloc_page(alloc_location + i * 0x1000, (entry.pd_entry * 0x400000) + (entry.pt_entry * 0x1000) + i * 0x1000, true, true, true);
     }
 
     kheap_end += 0x100000;
@@ -436,9 +469,11 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
     heap_expand();
     if (prealloc_table == NULL) {
         prealloc_table = (page_table_t *)kmalloc_ap(sizeof(page_table_t), &prealloc_phys);
+        memset(prealloc_table->pt_entry, 0, sizeof(prealloc_table->pt_entry));
     }
     if (prealloc_bitmap == NULL) {
         prealloc_bitmap = (bitmap_1024_t *)kmalloc(sizeof(bitmap_1024_t));
+        memset(prealloc_bitmap->bitmap, 0, sizeof(prealloc_bitmap->bitmap));
     }
     return kmalloc_int(size, align, phys);
 }

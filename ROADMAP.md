@@ -1,3 +1,3 @@
 # Roadmap
-- Reimplement the RAMDISK in a smarter way
-- Loading + Running ELF files
+- Implement copying of page tables
+- Task switching

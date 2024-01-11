@@ -1,0 +1,12 @@
+Got ELF file
+Header is valid. Entry point: 0x0
+ELF: Loading program header 0 into memory
+	Virtual address: 0x0
+	Physical address: 0x0
+	File offset: 0x1000
+	File size: 0x5B
+	Memory size: 0x5B
+	Flags: 0x7
+	Alignment: 0x1000
+
+	VA: 0x0-0x1000, 1 pages

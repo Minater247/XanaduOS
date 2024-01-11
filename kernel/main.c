@@ -5,6 +5,8 @@
 #include "inc_c/display.h"
 #include "inc_c/boot.h"
 #include "include/filesystem.h"
+#include "inc_c/memory.h"
+#include "inc_c/elf_x86.h"
 
 //temp
 #include "../arch/x86/drivers/keyboard.h"
@@ -13,53 +15,41 @@
 void kernel_main() {
 	boot_initialize();
 
-	file_descriptor_t fd = fopen("/mnt/ramdisk/logo.txt", 0);
-	char buf2[101];
-	//check the flags
+
+	//attempt to load hello.elf
+	file_descriptor_t fd = fopen("/mnt/ramdisk/bin/hello.elf", 0);
 	if (fd.flags & FILE_NOTFOUND_FLAG || !(fd.flags & FILE_ISOPEN_FLAG))
 	{
-		terminal_printf("File not found!\n");
+		terminal_printf("Could not locate hello.elf!\n");
 		while (true);
 	}
-
-	terminal_printf("Valid file!");
-
-	//set color to lime
-	terminal_printf("\033[32m");
-	int read = fread(buf2, 1, 100, &fd);
-	while (read > 0)
+	int size = fgetsize(&fd);
+	terminal_printf("Size of hello.elf: %d\n", size);
+	char *elfbuf = kmalloc(size);
+	int read = fread(elfbuf, 1, size, &fd);
+	if (read != size)
 	{
-		for (int i = 0; i < read; i++)
-		{
-			terminal_putchar(buf2[i]);
-		}
-		read = fread(buf2, 1, 100, &fd);
+		terminal_printf("Could not read hello.elf!\n");
+		while (true);
 	}
+	terminal_printf("Read %d bytes from hello.elf\n", read);
 	fclose(&fd);
-
-	//set color to white
-	terminal_printf("\n\033[0m");
-	dir_descriptor_t dd = fopendir("/mnt/ramdisk/", 0);
-	if (dd.flags & FILE_NOTFOUND_FLAG || !(dd.flags & FILE_ISOPENDIR_FLAG))
+	
+	elf_load_result_t loaded = elf_load_executable(elfbuf);
+	if (loaded.code != 0)
 	{
-		terminal_printf("Directory not found!\n");
+		terminal_printf("Could not load hello.elf! Error code: %d\n", loaded.code);
 		while (true);
 	}
+	kfree(elfbuf);
 
-	//print the contents
-	terminal_printf("Valid directory!\n");
-	terminal_printf("Contents:\n");
-	simple_return_t ret = freaddir(&dd);
-	while (!(ret.flags & FILE_NOTFOUND_FLAG))
-	{
-		terminal_printf(ret.name);
-		terminal_printf("\n");
-		ret = freaddir(&dd);
-	}
-	fclosedir(&dd);
-
-
-
+	//print success in green
+	terminal_printf("\x1b[32mSuccessfully loaded hello.elf!\x1b[0m\n");
+	terminal_printf("Entry point: 0x%x\n", loaded.entry_point);
+	//jump to entry point - we expect an int to be returned
+	int (*entry_point)() = (int (*)())loaded.entry_point;
+	int ret = entry_point();
+	terminal_printf("Returned: %d\n", ret);
 
 
 	char buf[2] = {0, 0};
