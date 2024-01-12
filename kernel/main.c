@@ -51,6 +51,21 @@ void kernel_main() {
 	int ret = entry_point();
 	terminal_printf("Returned: %d\n", ret);
 
+	//test WRITE syscall on "Hello, world!"
+	terminal_printf("Testing WRITE syscall...\n");
+	//we have to use inline assembly since syscall_write hasn't been implemented yet
+	char *str = "Hello, world!\n";
+	asm volatile (
+		"movl $1, %%eax;"      // syscall number (sys_write)
+		"movl $1, %%edi;"      // file descriptor (stdout)
+		"movl %0, %%esi;"      // buffer to write from
+		"movl $13, %%edx;"     // number of bytes
+		"int $0x80;"           // call kernel
+		:
+		: "r" (str)
+		: "eax", "ebx", "ecx", "edx"
+	);
+
 
 	char buf[2] = {0, 0};
 	while (true) {

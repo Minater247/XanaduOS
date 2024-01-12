@@ -79,6 +79,8 @@ ISR_NOERCODE 29
 ISR_NOERCODE 30
 ISR_NOERCODE 31
 
+ISR_NOERCODE 128
+
 /* ISR common stub */
 .extern isr_handler
 isr_common_stub:

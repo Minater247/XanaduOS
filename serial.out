@@ -4,8 +4,8 @@ ELF: Loading program header 0 into memory
 	Virtual address: 0x0
 	Physical address: 0x0
 	File offset: 0x1000
-	File size: 0x5B
-	Memory size: 0x5B
+	File size: 0x6B
+	Memory size: 0x6B
 	Flags: 0x7
 	Alignment: 0x1000
 
