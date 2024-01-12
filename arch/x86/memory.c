@@ -6,6 +6,7 @@
 #include "inc_c/display.h"
 #include "inc_c/memory.h"
 #include "inc_c/string.h"
+#include "inc_c/serial.h"
 #include "../../kernel/include/errors.h"
 #include "../../kernel/include/unused.h"
 
@@ -42,12 +43,6 @@ typedef struct {
 } __attribute__((packed)) page_directory_t;
 
 
-// typedef struct {
-//     uint32_t pd_entry;
-//     uint32_t pt_entry;
-// } __attribute__((packed)) page_table_entry_t;
-
-
 #define HEAP_MAGIC 0xFEAF2004
 
 extern uint8_t KERNEL_END; // defined in linker.ld
@@ -61,6 +56,7 @@ uint32_t total_mem_size = 0;
 
 bitmap_1024_t *page_directory_bitmaps[1024]; // physical memory bitmap for memory allocation
 page_directory_t kernel_pd __attribute__((aligned(4096))); // kernel page directory
+page_directory_t *current_pd = &kernel_pd; // current page directory
 
 page_table_t *prealloc_table = NULL; // page table for preallocated memory
 uint32_t prealloc_phys;
@@ -149,6 +145,15 @@ void memory_initialize(multiboot_info_t *mboot_info)
         ((uint32_t *)kernel_pd.virt[0x301])[i] = (i * 0x1000 + 0x400000) | 0x3;
     }
 
+    //point 0xFFFFE000 and 0xFFFFF000 to NULL
+    new_map = (page_table_t *)kmalloc_ap(sizeof(page_table_t), &phys);
+    memset(new_map->pt_entry, 0, sizeof(new_map->pt_entry));
+    kernel_pd.entries[0x3FF] = phys | 0x3;
+    kernel_pd.virt[0x3FF] = (uint32_t)new_map;
+    kernel_pd.is_full[0x3FF] = false;
+    ((page_table_t *)kernel_pd.virt[0x3FF])->pt_entry[1022] = 3;
+    ((page_table_t *)kernel_pd.virt[0x3FF])->pt_entry[1023] = 3;
+
     //switch to the new page directory
     asm volatile("mov %0, %%cr3":: "r"((uint32_t)&kernel_pd - 0xC0000000));
 
@@ -215,11 +220,16 @@ page_table_entry_t first_free_page()
     {
         if (page_directory_bitmaps[i] == NULL)
         {
-            if (!is_in_usable_memory(i * 1024 * 1024))
+            memory_region_t *region = memory_map;
+            while (region)
             {
-                continue;
+                //check if it overlaps at all, wither with the end or start
+                if (region->start < i * 1024 * 1024 + 1024 * 1024 && region->end > i * 1024 * 1024)
+                {
+                    return (page_table_entry_t){.pd_entry = i, .pt_entry = 0};
+                }
+                region = region->next;
             }
-            return (page_table_entry_t){.pd_entry = i, .pt_entry = 0};
         } else if (kernel_pd.is_full[i]) {
             continue;
         }
@@ -245,6 +255,56 @@ page_table_entry_t first_free_page()
 }
 
 
+void phys_copypage(uint32_t src, uint32_t dest) {
+    ((page_table_t *)current_pd->virt[0x3FF])->pt_entry[1022] = (src & 0xFFFFF000) | 0x3;
+    ((page_table_t *)current_pd->virt[0x3FF])->pt_entry[1023] = (dest & 0xFFFFF000) | 0x3;
+    
+    memcpy((void *)0xFFFFE000, (void *)0xFFFFF000, 4096);
+}
+
+
+page_directory_t *clone_page_directory(page_directory_t *directory) {
+    uint32_t phys;
+    page_directory_t *new_directory = (page_directory_t *)kmalloc_ap(sizeof(page_directory_t), &phys);
+    memset(new_directory, 0, sizeof(page_directory_t));
+    new_directory->phys_addr = phys;
+
+    for (uint32_t pde = 0; pde < 1024; pde++) {
+        if (directory->entries[pde] & 0x1) {
+
+            new_directory->virt[pde] = (uint32_t)kmalloc_ap(sizeof(page_table_t), &phys);
+            new_directory->entries[pde] = phys | 0x3;
+            new_directory->is_full[pde] = directory->is_full[pde];
+
+            for (uint32_t pte = 0; pte < 1024; pte++) {
+                if (((page_table_t *)directory->virt[pde])->pt_entry[pte] & 0x1) {
+                    //if it's the same as the kernel, skip it
+                    uint32_t kernel_entry = ((page_table_t *)kernel_pd.virt[pde])->pt_entry[pte] & 0xFFFFF000;
+                    uint32_t this_entry = ((page_table_t *)directory->virt[pde])->pt_entry[pte] & 0xFFFFF000;
+
+                    if (kernel_entry == this_entry) {
+                        ((page_table_t *)new_directory->virt[pde])->pt_entry[pte] = this_entry | 0x3;
+                        continue;
+                    }
+
+                    //page_table_entry_t entry = first_free_page();
+
+                    kpanic("Observe this code before continuing!");
+                }
+            }
+        }
+    }
+
+    return new_directory;
+}
+
+
+void switch_page_directory(page_directory_t *directory) {
+    current_pd = directory;
+    asm volatile("mov %0, %%cr3":: "r"(directory->phys_addr));
+}
+
+
 //allocate a page of memory
 void alloc_page(uint32_t virt, uint32_t phys, bool make, bool is_kernel, bool is_writeable) {
     //get the page directory entry
@@ -254,33 +314,33 @@ void alloc_page(uint32_t virt, uint32_t phys, bool make, bool is_kernel, bool is
     phys &= 0xFFFFF000; //make sure the physical address is page-aligned
 
     //check if the page is already in use
-    if (kernel_pd.virt[pd_entry] == 0 && make) {
+    if (current_pd->virt[pd_entry] == 0 && make) {
         kassert(prealloc_table != NULL);
         //we already have a preallocated space for this page table
-        kernel_pd.virt[pd_entry] = (uint32_t)prealloc_table;
-        kernel_pd.entries[pd_entry] = prealloc_phys | 0x1;
+        current_pd->virt[pd_entry] = (uint32_t)prealloc_table;
+        current_pd->entries[pd_entry] = prealloc_phys | 0x1;
         if (!is_kernel) {
-            kernel_pd.entries[pd_entry] |= 0x4;
+            current_pd->entries[pd_entry] |= 0x4;
         }
         if (is_writeable) {
-            kernel_pd.entries[pd_entry] |= 0x2;
+            current_pd->entries[pd_entry] |= 0x2;
         }
-        kernel_pd.is_full[pd_entry] = false;
+        current_pd->is_full[pd_entry] = false;
         prealloc_table = NULL;
     }
-    if ((*(page_table_t *)(kernel_pd.virt[pd_entry])).pt_entry[pt_entry] & 0x1) {
+    if ((*(page_table_t *)(current_pd->virt[pd_entry])).pt_entry[pt_entry] & 0x1) {
         kpanic("Attempted to allocate already allocated page!");
     }
 
     //set the page table entry
-    ((page_table_t *)(kernel_pd.virt[pd_entry]))->pt_entry[pt_entry] = phys | 0x3;
+    ((page_table_t *)(current_pd->virt[pd_entry]))->pt_entry[pt_entry] = phys | 0x3;
 
     //if the bitmap doesn't exist, use the preallocated one
     uint32_t phys_pd_entry = phys >> 22;
     uint32_t phys_pt_entry = (phys >> 12) & 0x3FF;
     if (page_directory_bitmaps[phys_pd_entry] == NULL) {
         page_directory_bitmaps[phys_pd_entry] = prealloc_bitmap;
-        kernel_pd.is_full[phys_pd_entry] = false;
+        current_pd->is_full[phys_pd_entry] = false;
         prealloc_bitmap = NULL;
     }
 
@@ -294,7 +354,7 @@ void alloc_page(uint32_t virt, uint32_t phys, bool make, bool is_kernel, bool is
         }
     }
     //the page directory entry is full
-    kernel_pd.is_full[phys_pd_entry] = true;
+    current_pd->is_full[phys_pd_entry] = true;
     return;
 }
 
@@ -329,12 +389,13 @@ void heap_expand() {
 
 void heap_dump()
 {
-    terminal_printf("Heap dump:\n");
+    serial_printf("\n\nHeap dump:\n");
     // for each header, print the header, the contents, and the next header
     for (heap_header_t *header = kheap; header != NULL; header = header->next)
     {
-        terminal_printf("@ 0x%x, length: %x, free: %s\n", header, header->length, header->free ? "true" : "false");
-        terminal_printf("Contents: 0x%x\n", *(uint32_t *)((uint32_t)header + sizeof(heap_header_t)));
+        serial_printf("@ 0x%x, length: %x, free: %s\n", header, header->length, header->free ? "true" : "false");
+        serial_printf("Contents: 0x%x\n", *(uint32_t *)((uint32_t)header + sizeof(heap_header_t)));
+        serial_printf("Next: 0x%x\n", header->next);
     }
 }
 
@@ -360,18 +421,23 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
         heap_header_t *header;
         for (header = kheap; header != NULL; header = header->next)
         {
-            uint32_t aligned_addr = ((uint32_t)header & 0xFFF) ? ((uint32_t)header & 0xFFFFF000) + 0x1000 : (uint32_t)header;
-            if (((aligned_addr + size) <= ((uint32_t)header + header->length)) && header->free)
+            uint32_t aligned_addr = (((uint32_t)header + sizeof(heap_header_t)) + 0xFFF) & 0xFFFFF000;
+            if (((aligned_addr + size) <= ((uint32_t)header + sizeof(heap_header_t) + header->length)) && header->free)
             {
                 // The aligned address block is within the header, and the header is free
 
                 // Check if there is space before the aligned address block for another header
-                if (aligned_addr > (uint32_t)header + (2 * sizeof(heap_header_t)))
+                if (aligned_addr - (uint32_t)header > sizeof(heap_header_t) + sizeof(heap_header_t))
                 {
+                    uint32_t new_header_address = aligned_addr - sizeof(heap_header_t);
+
+                    uint32_t header_size_old = aligned_addr - sizeof(heap_header_t) - ((uint32_t)header + sizeof(heap_header_t));
+                    uint32_t header_size_new = (uint32_t)header + sizeof(heap_header_t) + header->length - aligned_addr;
+
                     // this allocation needs a header
-                    heap_header_t *new_header = (heap_header_t *)(aligned_addr - sizeof(heap_header_t));
+                    heap_header_t *new_header = (heap_header_t *)(new_header_address);
                     new_header->magic = HEAP_MAGIC;
-                    new_header->length = (uint32_t)header + header->length - aligned_addr;
+                    new_header->length = header_size_new;
                     new_header->next = header->next;
                     new_header->prev = header;
                     new_header->free = false;
@@ -382,17 +448,24 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
                     }
 
                     header->next = new_header;
-                    header->length = aligned_addr - (uint32_t)header - (2 * sizeof(heap_header_t));
+                    header->length = header_size_old;
                     header = new_header;
+
+                    kassert(header->length >= size);
                 }
 
                 // check if there is space after the aligned address block for another header
-                if ((aligned_addr + size) < ((uint32_t)header + sizeof(heap_header_t) + header->length - sizeof(heap_header_t)))
+                if (((uint32_t)header + sizeof(heap_header_t) + header->length) - (aligned_addr + size) > sizeof(heap_header_t))
                 {
                     // there needs to be a header after this allocation
-                    heap_header_t *new_header = (heap_header_t *)(aligned_addr + size);
+                    uint32_t new_header_address = aligned_addr + size;
+
+                    uint32_t header_size_new = ((uint32_t)header + sizeof(heap_header_t) + header->length) - (aligned_addr + size + sizeof(heap_header_t));
+                    uint32_t header_size_old = (aligned_addr + size) - ((uint32_t)header + sizeof(heap_header_t));
+
+                    heap_header_t *new_header = (heap_header_t *)(new_header_address);
                     new_header->magic = HEAP_MAGIC;
-                    new_header->length = (uint32_t)header + sizeof(heap_header_t) + header->length - aligned_addr - size - sizeof(heap_header_t);
+                    new_header->length = header_size_new;
                     new_header->next = header->next;
                     new_header->prev = header;
                     new_header->free = true;
@@ -403,7 +476,8 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
                     }
 
                     header->next = new_header;
-                    header->length = aligned_addr + size - (uint32_t)header - sizeof(heap_header_t);
+                    header->length = header_size_old;
+
                 }
 
                 header->free = false;
@@ -413,7 +487,7 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
                     //find the entry via the page table
                     uint32_t pd_entry = aligned_addr >> 22;
                     uint32_t pt_entry = (aligned_addr >> 12) & 0x3FF;
-                    *phys = ((page_table_t *)kernel_pd.virt[pd_entry])->pt_entry[pt_entry] & 0xFFFFF000;
+                    *phys = ((page_table_t *)current_pd->virt[pd_entry])->pt_entry[pt_entry] & 0xFFFFF000;
                 }
 
                 // now we can return the aligned address
@@ -431,7 +505,7 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
                 // we found a header that's big enough
                 // now we need to split it if it's too big
                 if (header->length > size + sizeof(heap_header_t))
-                {
+                {   
                     // split the header
                     heap_header_t *new_header = (heap_header_t *)((uint32_t)header + sizeof(heap_header_t) + size);
                     new_header->magic = HEAP_MAGIC;
@@ -456,7 +530,7 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
                     //find the entry via the page table
                     uint32_t pd_entry = (uint32_t)header >> 22;
                     uint32_t pt_entry = ((uint32_t)header >> 12) & 0x3FF;
-                    *phys = (((page_table_t *)kernel_pd.virt[pd_entry])->pt_entry[pt_entry] & 0xFFFFF000) + ((uint32_t)header & 0xFFF);
+                    *phys = (((page_table_t *)current_pd->virt[pd_entry])->pt_entry[pt_entry] & 0xFFFFF000) + ((uint32_t)header & 0xFFF);
                 }
 
                 // now we can return the header

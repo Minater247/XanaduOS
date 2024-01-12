@@ -1,3 +1,3 @@
 # Roadmap
-- Implement copying of page tables
+- Add syscalls
 - Task switching
