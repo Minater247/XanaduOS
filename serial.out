@@ -1,3 +1,9 @@
+PROCESS DUMP @ 0xC0219091
+	PID: 0
+	REG: 0xC0219095
+	FDS: 0xC02190E1
+	NFD: 0
+	NXT: 0x0
 Got ELF file
 Header is valid. Entry point: 0x0
 ELF: Loading program header 0 into memory

@@ -10,6 +10,7 @@
 #include "../../kernel/include/errors.h"
 #include "inc_c/ramdisk.h"
 #include "inc_c/serial.h"
+#include "inc_c/process.h"
 
 extern uint32_t given_magic;
 extern uint32_t given_mboot;
@@ -336,7 +337,12 @@ void boot_initialize() {
 
     memory_initialize(mboot_info);
 
+	process_initialize();
+
     ramdisk_initialize(mboot_info);
+    devices_initialize();
+
+    terminal_register_device();
 
     asm volatile("sti");
 }

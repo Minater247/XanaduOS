@@ -6,6 +6,9 @@
 #include "inc_c/display.h"
 #include "inc_c/io.h"
 #include "inc_c/string.h"
+#include "inc_c/devices.h"
+#include "../../kernel/include/unused.h"
+#include "../../kernel/include/filesystem.h"
 
 static const size_t VGA_WIDTH = 80;
 static const size_t VGA_HEIGHT = 25;
@@ -397,4 +400,76 @@ void terminal_printf(const char *format, ...)
         }
     }
     terminal_movecursor(terminal_column, terminal_row);
+}
+
+
+
+
+// typedef struct device {
+//     char name[64];
+//     uint32_t flags;
+//     int (*read)(void *ptr, uint32_t size);
+//     int (*write)(void *ptr, uint32_t size);
+//     int (*seek)(uint32_t offset, uint8_t whence);
+//     int (*tell)();
+//     //other functions generally return 0/NULL on success and -1/NULL on failure since devices are not files
+//     struct device *next;
+// } device_t;
+
+uint32_t seek_pos = 0;
+
+int trm_dev_write(void *ptr, uint32_t size) {
+    //this one, however, is easy enough!
+    //TODO: move control characters from printf to terminal_write
+    terminal_write(ptr, size);
+    return size;
+}
+
+int trm_dev_seek(uint32_t offset, uint8_t whence) {
+    switch (whence) {
+        case SEEK_SET:
+            seek_pos = offset;
+            break;
+        case SEEK_CUR:
+            seek_pos += offset;
+            break;
+        case SEEK_END:
+            seek_pos = VGA_WIDTH * VGA_HEIGHT - offset;
+            break;
+    }
+    return 0;
+}
+
+int trm_dev_tell() {
+    return seek_pos;
+}
+
+int trm_dev_read(void *ptr, uint32_t size) {
+    //return the content at seek_pos within the VGA buffer
+    uint8_t *buf = (uint8_t*)ptr;
+    if (seek_pos + size > VGA_WIDTH * VGA_HEIGHT) {
+        size = VGA_WIDTH * VGA_HEIGHT - seek_pos;
+    }
+    if (size == 0 || size > VGA_WIDTH * VGA_HEIGHT) {
+        return 0;
+    }
+    for (uint32_t i = 0; i < size; i++) {
+        buf[i] = terminal_buffer[seek_pos + i] & 0xFF;
+    }
+    seek_pos += size;
+    return size;
+}
+
+device_t trm_dev = {
+    "trm",
+    0,
+    trm_dev_read,
+    trm_dev_write,
+    trm_dev_seek,
+    trm_dev_tell,
+    NULL
+};
+
+void terminal_register_device() {
+    register_device(&trm_dev);
 }

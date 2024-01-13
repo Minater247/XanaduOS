@@ -5,6 +5,7 @@
 #include "inc_c/string.h"
 #include "include/filesystem.h"
 #include "inc_c/memory.h"
+#include "inc_c/process.h"
 
 fs_node_t head_node = {NULL, NULL};
 mount_point_t head_mount_point = {NULL, NULL, NULL};
@@ -64,11 +65,18 @@ uint32_t next_id() {
 
 uint32_t next_file_id() {
     //if we've used all the ids, panic
-    if (file_id == 0xFFFFFFFE) {
-        kpanic("Out of file ids!\n");
+    if (current_process->num_fds >= current_process->max_fds) {
+        kpanic("Process %d out of file descriptors!\n", current_process->pid);
     }
-    file_id++;
-    return file_id;
+    //find the first NULL file descriptor
+    for (uint32_t i = 0; i < current_process->max_fds; i++) {
+        if (current_process->fds[i] == NULL) {
+            current_process->num_fds++;
+            return i;
+        }
+    }
+    //if we get here, something went wrong, that should already be checked for
+    kpanic("Something went wrong in next_file_id!\n");
 }
 
 int register_filesystem(filesystem_t *to_register) {
@@ -223,7 +231,23 @@ int fread(char *buf, uint32_t size, uint32_t count, file_descriptor_t *fd) {
     return fd->fs->read(buf, size, count, fd->fs_data);
 }
 
+int fwrite(char *buf, uint32_t size, uint32_t count, file_descriptor_t *fd) {
+    return fd->fs->write(buf, size, count, fd->fs_data);
+}
+
 int fclose(file_descriptor_t *fd) {
+    if (fd->fs->close == NULL) {
+        return 0;
+    }
+
+    if (!(fd->flags & FILE_ISOPEN_FLAG)) {
+        return 0;
+    }
+
+    // Clear the file descriptor
+    current_process->fds[fd->id] = NULL;
+    current_process->num_fds--;
+
     return fd->fs->close(fd->fs_data);
 }
 

@@ -9,6 +9,7 @@
 #include "inc_c/io.h"
 #include "inc_c/hardware.h"
 #include "../../kernel/include/errors.h"
+#include "inc_c/syscall.h"
 
 gdt_entry_t gdt[5];
 gdt_ptr_t   gdt_ptr;

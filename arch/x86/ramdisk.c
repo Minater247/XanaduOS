@@ -54,9 +54,6 @@ ramdisk_file_t *ropen(char *path, uint32_t flags) {
                     //we're at the end of the path, so return the file
                     ramdisk_file_t *file = (ramdisk_file_t*)kmalloc(sizeof(ramdisk_file_t));
                     file->flags = FILE_ISOPEN_FLAG | FILE_ISFILE_FLAG;
-                    for (uint8_t i = 0; i < 64; i++) {
-                        file->name[i] = file_header->name[i];
-                    }
                     file->length = file_header->length;
                     file->addr = (uint32_t)ramdisk + ramdisk->headers_len + file_header->offset;
                     file->seek_pos = 0;
@@ -93,8 +90,6 @@ ramdisk_dir_t *ropendir(char *path, uint32_t flags) {
     if (strncmp(path, "/", 2) == 0) {
         ramdisk_dir_t *dir = (ramdisk_dir_t*)kmalloc(sizeof(ramdisk_dir_t));
         dir->flags = FILE_ISOPENDIR_FLAG | FILE_ISDIR_FLAG;
-        dir->name[0] = '/';
-        dir->name[1] = '\0';
         dir->num_files = ramdisk->num_root_files;
         dir->idx = 0;
         dir->files = (void*)((uint32_t)ramdisk + sizeof(ramdisk_size_t));
@@ -113,9 +108,6 @@ ramdisk_dir_t *ropendir(char *path, uint32_t flags) {
                     //we're at the end of the path, so return the directory
                     ramdisk_dir_t *dir = (ramdisk_dir_t*)kmalloc(sizeof(ramdisk_dir_t));
                     dir->flags = FILE_ISOPENDIR_FLAG | FILE_ISDIR_FLAG;
-                    for (uint8_t i = 0; i < 64; i++) {
-                        dir->name[i] = dir_header->name[i];
-                    }
                     dir->num_files = dir_header->num_files;
                     dir->idx = 0;
                     dir->files = (void*)((uint32_t)ramdisk + offset + sizeof(ramdisk_dir_header_t));
@@ -260,7 +252,7 @@ int rclosedir(ramdisk_dir_t *dir) {
     return 0;
 }
 
-uint32_t getsize(void *fd) {
+uint32_t rgetsize(void *fd) {
     //depending on whether this is a file or directory, return the appropriate size
     if (*(uint32_t*)fd & FILE_ISFILE_FLAG) {
         return ((ramdisk_file_t*)fd)->length;
@@ -301,7 +293,7 @@ void ramdisk_initialize(multiboot_info_t *mboot_info) {
     ramdisk_fs.opendir = (void*(*)(char*, uint32_t))ropendir;
     ramdisk_fs.readdir = (simple_return_t(*)(void*))rreaddir;
     ramdisk_fs.closedir = (int(*)(void*))rclosedir;
-    ramdisk_fs.getsize = getsize;
+    ramdisk_fs.getsize = rgetsize;
     ramdisk_fs_registered = register_filesystem(&ramdisk_fs);
     if (!ramdisk_fs_registered) {
         kpanic("Failed to register ramdisk filesystem!\n");

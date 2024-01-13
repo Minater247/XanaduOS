@@ -49,7 +49,6 @@ typedef struct {
 
 typedef struct {
     uint32_t flags;
-    char name[64];
     uint32_t length;
     uint32_t addr;
     uint32_t seek_pos;
@@ -57,7 +56,6 @@ typedef struct {
 
 typedef struct {
     uint32_t flags;
-    char name[64];
     uint32_t num_files;
     uint32_t idx;
     void *files;

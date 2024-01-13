@@ -7,6 +7,7 @@
 #include "include/filesystem.h"
 #include "inc_c/memory.h"
 #include "inc_c/elf_x86.h"
+#include "inc_c/process.h"
 
 //temp
 #include "../arch/x86/drivers/keyboard.h"
@@ -59,12 +60,30 @@ void kernel_main() {
 		"movl $1, %%eax;"      // syscall number (sys_write)
 		"movl $1, %%edi;"      // file descriptor (stdout)
 		"movl %0, %%esi;"      // buffer to write from
-		"movl $13, %%edx;"     // number of bytes
+		"movl $14, %%edx;"     // number of bytes
 		"int $0x80;"           // call kernel
 		:
 		: "r" (str)
 		: "eax", "ebx", "ecx", "edx"
 	);
+
+	terminal_printf("Free fds: %d\n", current_process->max_fds - current_process->num_fds);
+
+
+	fd = fopen("/dev/trm", 0);
+	if (fd.flags & FILE_NOTFOUND_FLAG || !(fd.flags & FILE_ISOPEN_FLAG))
+	{
+		terminal_printf("Could not locate /dev/trm!\n");
+		while (true);
+	}
+
+	//write to /dev/trm
+	fwrite("Hello from /dev/trm!\n", 1, 20, &fd);
+	//try to read from /dev/trm
+	char buf2[20];
+	fread(buf2, 1, 20, &fd);
+	terminal_printf("Read from /dev/trm: %s", buf2);
+	fclose(&fd);
 
 
 	char buf[2] = {0, 0};
