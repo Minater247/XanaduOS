@@ -29,7 +29,16 @@ void kernel_main() {
 		terminal_printf("Could not locate hello.elf!\n");
 		while (true);
 	}
-	int size = fgetsize(fd);
+
+	stat_t stat;
+	int stat_ret = fstat(fd, &stat);
+	if (stat_ret != 0)
+	{
+		terminal_printf("Could not stat hello.elf!\n");
+		while (true);
+	}
+	int size = stat.st_size;
+
 	terminal_printf("Size of hello.elf: %d\n", size);
 	char *elfbuf = kmalloc(size);
 	int read = fread(elfbuf, 1, size, fd);
@@ -39,6 +48,7 @@ void kernel_main() {
 		while (true);
 	}
 	terminal_printf("Read %d bytes from hello.elf\n", read);
+
 	fclose(fd);
 	
 	elf_load_result_t loaded = elf_load_executable(elfbuf);
@@ -55,36 +65,7 @@ void kernel_main() {
 	//jump to entry point - we expect an int to be returned
 	int (*entry_point)() = (int (*)())loaded.entry_point;
 	int ret = entry_point();
-	terminal_printf("Returned: %d\n", ret);
-
-	//test WRITE syscall on "Hello, world!"
-	terminal_printf("Testing WRITE syscall...\n");
-	//we have to use inline assembly since syscall_write hasn't been implemented yet
-	char *str = "Hello, world!\n";
-	asm volatile (
-		"movl $1, %%eax;"      // syscall number (sys_write)
-		"movl $1, %%ebx;"      // file descriptor (stdout)
-		"movl %0, %%ecx;"      // buffer to write from
-		"movl $14, %%edx;"     // number of bytes
-		"int $0x80;"           // call kernel
-		:
-		: "r" (str)
-		: "eax", "ebx", "ecx", "edx"
-	);
-
-
-
-	file_descriptor_t *fd2 = stdout; //attempt to load /dev/trm again
-
-	//write to /dev/trm
-	fwrite("Hello from /dev/trm!\n", 1, 21, fd2);
-	//try to read from /dev/trm
-	char buf2[20];
-	fread(buf2, 1, 20, fd2);
-	terminal_printf("Read from /dev/trm: %s", buf2);
-
-	//try and write something else to it
-	fwrite("\nHello from a file descriptor ID!\n", 1, 34, fd2);
+	terminal_printf("\n\033[0mReturned: %d\n", ret);
 
 	
     char buf;

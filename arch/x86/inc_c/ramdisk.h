@@ -52,6 +52,7 @@ typedef struct {
     uint32_t length;
     uint32_t addr;
     uint32_t seek_pos;
+    uint32_t mode;
 } __attribute__((packed)) ramdisk_file_t;
 
 typedef struct {
@@ -59,6 +60,7 @@ typedef struct {
     uint32_t num_files;
     uint32_t idx;
     void *files;
+    uint32_t mode;
 } __attribute__((packed)) ramdisk_dir_t;
 
 void ramdisk_initialize();

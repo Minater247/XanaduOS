@@ -17,7 +17,12 @@ filesystem_t ramdisk_fs = {0};
 int ramdisk_fs_registered = 0;
 
 ramdisk_file_t *ropen(char *path, uint32_t flags) {
-    UNUSED(flags);
+    if (flags & FILE_MODE_WRITE || flags & FILE_MODE_APPEND) {
+        //we don't support writing to the ramdisk
+        ramdisk_file_t *file = (ramdisk_file_t*)kmalloc(sizeof(ramdisk_file_t));
+        file->flags = FILE_NOTFOUND_FLAG;
+        return file;
+    }
 
     uint8_t item = 0;
     char path_item[64];
@@ -57,6 +62,7 @@ ramdisk_file_t *ropen(char *path, uint32_t flags) {
                     file->length = file_header->length;
                     file->addr = (uint32_t)ramdisk + ramdisk->headers_len + file_header->offset;
                     file->seek_pos = 0;
+                    file->mode = FILE_MODE_READ;
                     return file;
                 } else {
                     //we're not at the end of the path, so return an error
@@ -157,6 +163,9 @@ int rread(void *ptr, uint32_t size, uint32_t nmemb, ramdisk_file_t *file) {
     if (file->seek_pos >= file->length) {
         return 0;
     }
+    if (!(file->mode & FILE_MODE_READ)) {
+        return -1;
+    }
     uint32_t bytes_to_read = size * nmemb;
     if (file->seek_pos + bytes_to_read > file->length) {
         bytes_to_read = file->length - file->seek_pos;
@@ -252,15 +261,34 @@ int rclosedir(ramdisk_dir_t *dir) {
     return 0;
 }
 
-uint32_t rgetsize(void *fd) {
-    //depending on whether this is a file or directory, return the appropriate size
-    if (*(uint32_t*)fd & FILE_ISFILE_FLAG) {
-        return ((ramdisk_file_t*)fd)->length;
-    } else if (*(uint32_t*)fd & FILE_ISDIR_FLAG) {
-        return ((ramdisk_dir_t*)fd)->num_files;
-    } else {
-        return 0;
+int rstat(void *file_in, stat_t *statbuf) {
+    ramdisk_file_t *file = (ramdisk_file_t*)file_in; //for some reason, this is necessary to get the compiler to stop complaining
+    if (!(file->flags & FILE_ISOPEN_FLAG)) {
+        return -1;
     }
+
+    statbuf->st_dev = ramdisk_fs.identifier;
+    statbuf->pad1 = 0;
+    statbuf->st_ino = 0;
+    statbuf->st_mode = FILE_MODE_READ;
+    statbuf->st_nlink = 0;
+    statbuf->st_uid = 0;
+    statbuf->st_gid = 0;
+    statbuf->st_rdev = 0;
+    statbuf->pad2 = 0;
+    statbuf->st_size = (*(uint32_t*)file & FILE_ISFILE_FLAG) ? file->length : ((ramdisk_dir_t*)file)->num_files; //if it's a file, return the file length, otherwise return the number of files in the directory
+    statbuf->st_blksize = 0;
+    statbuf->st_blocks = 0;
+    statbuf->st_atime = 0;
+    statbuf->unused1 = 0;
+    statbuf->st_mtime = 0;
+    statbuf->unused2 = 0;
+    statbuf->st_ctime = 0;
+    statbuf->unused3 = 0;
+    statbuf->unused4 = 0;
+    statbuf->unused5 = 0;
+
+    return 0;
 }
 
 void ramdisk_initialize(multiboot_info_t *mboot_info) {
@@ -293,7 +321,7 @@ void ramdisk_initialize(multiboot_info_t *mboot_info) {
     ramdisk_fs.opendir = (void*(*)(char*, uint32_t))ropendir;
     ramdisk_fs.readdir = (simple_return_t(*)(void*))rreaddir;
     ramdisk_fs.closedir = (int(*)(void*))rclosedir;
-    ramdisk_fs.getsize = rgetsize;
+    ramdisk_fs.stat = rstat;
     ramdisk_fs_registered = register_filesystem(&ramdisk_fs);
     if (!ramdisk_fs_registered) {
         kpanic("Failed to register ramdisk filesystem!\n");

@@ -17,8 +17,6 @@ int device_fs_registered = 0;
 device_t *device_head = NULL;
 
 device_file_t *dopen(char *path, uint32_t flags) {
-    UNUSED(flags);
-
     //Skip the leading slashes, if any
     while (*path == '/') {
         path++;
@@ -44,6 +42,16 @@ device_file_t *dopen(char *path, uint32_t flags) {
             ret->flags = FILE_ISFILE_FLAG | FILE_ISOPEN_FLAG;
             ret->device = current_device;
 
+            if (flags == 'r') {
+                ret->mode = FILE_MODE_READ;
+            } else if (flags == 'w') {
+                ret->mode = FILE_MODE_WRITE;
+            } else if (flags == 'a') {
+                ret->mode = FILE_MODE_APPEND;
+            } else {
+                ret->mode = FILE_MODE_READ | FILE_MODE_WRITE;
+            }
+
             return ret;
         }
         current_device = current_device->next;
@@ -57,16 +65,7 @@ device_file_t *dopen(char *path, uint32_t flags) {
 
 device_dir_t *dopendir(char *path, uint32_t flags) {
     UNUSED(flags);
-
-    //the path must be / or any number of slashes, but nothing else!
-    while (*path == '/') {
-        path++;
-    }
-    if (*path != '\0') {
-        device_dir_t *ret = (device_dir_t *)kmalloc(sizeof(device_dir_t));
-        ret->flags = FILE_NOTFOUND_FLAG;
-        return ret;
-    }
+    UNUSED(path); //we don't use the path for anything, but we need to take it as an argument to match the function pointer type
 
     //allocate a device_dir_t and return it
     device_dir_t *ret = (device_dir_t *)kmalloc(sizeof(device_dir_t));
@@ -76,10 +75,28 @@ device_dir_t *dopendir(char *path, uint32_t flags) {
 }
 
 int dread(void *ptr, uint32_t size, uint32_t nmemb, device_file_t *file) {
+    if (!(file->flags & FILE_ISOPEN_FLAG)) {
+        return -1;
+    }
+    if (!(file->flags & FILE_ISFILE_FLAG)) {
+        return -1;
+    }
+    if (!(file->mode & FILE_MODE_READ)) {
+        return -1;
+    }
     return file->device->read(ptr, size * nmemb);
 }
 
 int dwrite(void *ptr, uint32_t size, uint32_t nmemb, device_file_t *file) {
+    if (!(file->flags & FILE_ISOPEN_FLAG)) {
+        return -1;
+    }
+    if (!(file->flags & FILE_ISFILE_FLAG)) {
+        return -1;
+    }
+    if (!(file->mode & FILE_MODE_WRITE)) {
+        return -1;
+    }
     return file->device->write(ptr, size * nmemb);
 }
 
@@ -97,25 +114,38 @@ simple_return_t dreaddir(device_dir_t *dir) {
 }
 
 int dseek(device_file_t *file, uint32_t offset, uint8_t whence) {
+    if (!(file->flags & FILE_ISOPEN_FLAG)) {
+        return -1;
+    }
+    if (!(file->flags & FILE_ISFILE_FLAG)) {
+        return -1;
+    }
     return file->device->seek(offset, whence);
 }
 
 int dtell(device_file_t *file) {
+    if (!(file->flags & FILE_ISOPEN_FLAG)) {
+        return -1;
+    }
+    if (!(file->flags & FILE_ISFILE_FLAG)) {
+        return -1;
+    }
     return file->device->tell();
 }
 
 int dclose(device_file_t *file) {
+    if (!(file->flags & FILE_ISOPEN_FLAG)) {
+        return -1;
+    }
     kfree(file);
     return 0;
 }
 
 int dclosedir(device_dir_t *dir) {
+    if (!(dir->flags & FILE_ISOPENDIR_FLAG)) {
+        return -1;
+    }
     kfree(dir);
-    return 0;
-}
-
-uint32_t dgetsize(void *fd) {
-    UNUSED(fd);
     return 0;
 }
 
@@ -171,6 +201,36 @@ int unregister_device(device_t *device) {
     return 0;
 }
 
+int dstat(void *file_in, stat_t *statbuf) {
+    device_file_t *file = (device_file_t*)file_in; //for some reason, this is necessary to get the compiler to stop complaining
+    if (!(file->flags & FILE_ISOPEN_FLAG)) {
+        return -1;
+    }
+
+    statbuf->st_dev = device_fs.identifier;
+    statbuf->pad1 = 0;
+    statbuf->st_ino = 0;
+    statbuf->st_mode = FILE_MODE_READ | FILE_MODE_WRITE;
+    statbuf->st_nlink = 0;
+    statbuf->st_uid = 0;
+    statbuf->st_gid = 0;
+    statbuf->st_rdev = 0;
+    statbuf->pad2 = 0;
+    statbuf->st_size = 0;
+    statbuf->st_blksize = 0;
+    statbuf->st_blocks = 0;
+    statbuf->st_atime = 0;
+    statbuf->unused1 = 0;
+    statbuf->st_mtime = 0;
+    statbuf->unused2 = 0;
+    statbuf->st_ctime = 0;
+    statbuf->unused3 = 0;
+    statbuf->unused4 = 0;
+    statbuf->unused5 = 0;
+
+    return 0;
+}
+
 void devices_initialize() {
     device_fs.identifier = FILESYSTEM_TYPE_DEVICES;
     device_fs.open = (void*(*)(char*, uint32_t))dopen;
@@ -182,7 +242,6 @@ void devices_initialize() {
     device_fs.opendir = (void*(*)(char*, uint32_t))dopendir;
     device_fs.readdir = (simple_return_t(*)(void*))dreaddir;
     device_fs.closedir = (int(*)(void*))dclosedir;
-    device_fs.getsize = dgetsize;
     device_fs_registered = register_filesystem(&device_fs);
     if (!device_fs_registered) {
         kpanic("Failed to register device filesystem!\n");

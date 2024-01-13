@@ -292,14 +292,14 @@ int fclosedir(dir_descriptor_t *dd) {
     return dd->fs->closedir(dd->fs_data);
 }
 
-uint32_t fgetsize(void *fd) {
-    return ((file_descriptor_t*)fd)->fs->getsize(((file_descriptor_t*)fd)->fs_data);
-}
-
 int fseek(file_descriptor_t *fd, uint32_t offset, uint8_t whence) {
     return fd->fs->seek(fd->fs_data, offset, whence);
 }
 
 int ftell(file_descriptor_t *fd) {
     return fd->fs->tell(fd->fs_data);
+}
+
+int fstat(file_descriptor_t *fd, stat_t *statbuf) {
+    return fd->fs->stat(fd->fs_data, statbuf);
 }

@@ -14,6 +14,10 @@
 #define FILE_WRITTEN_FLAG 0x10
 #define FILE_NOTFOUND_FLAG 0x80000000
 
+#define FILE_MODE_READ 0x1
+#define FILE_MODE_WRITE 0x2
+#define FILE_MODE_APPEND 0x4
+
 #define SEEK_SET 0
 #define SEEK_CUR 1
 #define SEEK_END 2
@@ -27,6 +31,33 @@ typedef struct {
     char *name;
 } simple_return_t;
 
+#if defined(__ARCH_x86__)
+
+typedef struct {
+    uint16_t st_dev; //filesystem ID
+    uint16_t pad1;
+    uint32_t st_ino; //inode number
+    uint16_t st_mode; //file mode
+    uint16_t st_nlink; //number of hard links
+    uint16_t st_uid; //user ID of owner
+    uint16_t st_gid; //group ID of owner
+    uint16_t st_rdev; //device ID (if special file)
+    uint16_t pad2;
+    uint32_t st_size; //total size, in bytes
+    uint32_t st_blksize; //blocksize for filesystem I/O
+    uint32_t st_blocks; //number of blocks allocated
+    uint32_t st_atime; //time of last access
+    uint32_t unused1;
+    uint32_t st_mtime; //time of last modification
+    uint32_t unused2;
+    uint32_t st_ctime; //time of last status change
+    uint32_t unused3;
+    uint32_t unused4;
+    uint32_t unused5;
+} stat_t;
+
+#endif
+
 typedef struct {
     uint32_t identifier; //SHOULD NOT BE SET TO ANYTHING MEANINGFUL BY CALLER, SET BY REGISTER_FILESYSTEM
     void *(*open)(char *path, uint32_t flags);
@@ -36,7 +67,7 @@ typedef struct {
     int (*tell)(void *file);
     int (*close)(void *file);
     void *(*opendir)(char *path, uint32_t flags);
-    uint32_t (*getsize)(void *file);
+    int (*stat)(void *file, stat_t *statbuf);
     simple_return_t (*readdir)(void *dir);
     int (*closedir)(void *dir);
 } filesystem_t;
@@ -79,8 +110,8 @@ int fclose(file_descriptor_t *fd);
 dir_descriptor_t *fopendir(char *path, uint32_t flags);
 simple_return_t freaddir(dir_descriptor_t *dd);
 int fclosedir(dir_descriptor_t *dd);
-uint32_t fgetsize(void *fd);
 int fseek(file_descriptor_t *fd, uint32_t offset, uint8_t whence);
 int ftell(file_descriptor_t *fd);
+int fstat(file_descriptor_t *fd, stat_t *statbuf);
 
 #endif
