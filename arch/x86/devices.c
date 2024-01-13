@@ -49,8 +49,10 @@ device_file_t *dopen(char *path, uint32_t flags) {
         current_device = current_device->next;
     }
 
-    terminal_printf("dopen: %s\n", path);
-    while (1);
+    //if we didn't find a device, return NULL
+    device_file_t *ret = (device_file_t *)kmalloc(sizeof(device_file_t));
+    ret->flags = FILE_NOTFOUND_FLAG;
+    return ret;
 }
 
 device_dir_t *dopendir(char *path, uint32_t flags) {
@@ -61,7 +63,9 @@ device_dir_t *dopendir(char *path, uint32_t flags) {
         path++;
     }
     if (*path != '\0') {
-        return NULL;
+        device_dir_t *ret = (device_dir_t *)kmalloc(sizeof(device_dir_t));
+        ret->flags = FILE_NOTFOUND_FLAG;
+        return ret;
     }
 
     //allocate a device_dir_t and return it
@@ -116,8 +120,6 @@ uint32_t dgetsize(void *fd) {
 }
 
 int register_device(device_t *device) {
-    terminal_printf("\033[1;32mRegistered device: %s\033[0m\n", device->name);
-
     if (device_head == NULL) {
         device_head = device;
         return 1;

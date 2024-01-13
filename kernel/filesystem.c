@@ -195,7 +195,7 @@ int unmount_filesystem_by_path(char *path) {
     return 0;
 }
 
-file_descriptor_t fopen(char *path, uint32_t flags) {
+file_descriptor_t *fopen(char *path, uint32_t flags) {
     // Check whether this path matches a mount point
     mount_point_t *cur_mount_point = &head_mount_point;
     while (path[0] == '/') {
@@ -204,7 +204,6 @@ file_descriptor_t fopen(char *path, uint32_t flags) {
     int len;
     while (cur_mount_point != NULL) {
         len = strlen(cur_mount_point->path);
-        terminal_printf("Comparing %s to %s\n", path, cur_mount_point->path);
         if (!strncmp(path, cur_mount_point->path, len - 1)) { //len by itself causes a #GP for... some reason. (check on this if it becomes a problem)
             path += len;
             break;
@@ -213,17 +212,18 @@ file_descriptor_t fopen(char *path, uint32_t flags) {
     }
     if (cur_mount_point == NULL) {
         //TODO: allow setting up default filesystem for non-mounted paths
-        file_descriptor_t ret = {0, 0, NULL, NULL};
-        ret.flags |= FILE_NOTFOUND_FLAG;
+        file_descriptor_t *ret = (file_descriptor_t*)kmalloc(sizeof(file_descriptor_t));
+        ret->flags = FILE_NOTFOUND_FLAG;
         return ret;
     }
 
-    file_descriptor_t ret;
+    file_descriptor_t *ret = (file_descriptor_t*)kmalloc(sizeof(file_descriptor_t));
     filesystem_t *fs = cur_mount_point->fs;
-    ret.fs = fs;
-    ret.fs_data = fs->open(path, flags);
-    ret.flags = *(uint32_t*)ret.fs_data;
-    ret.id = next_file_id();
+    ret->fs = fs;
+    ret->fs_data = fs->open(path, flags);
+    ret->flags = *(uint32_t*)ret->fs_data;
+    ret->id = next_file_id();
+    current_process->fds[ret->id] = ret;
     return ret;
 }
 
@@ -232,6 +232,7 @@ int fread(char *buf, uint32_t size, uint32_t count, file_descriptor_t *fd) {
 }
 
 int fwrite(char *buf, uint32_t size, uint32_t count, file_descriptor_t *fd) {
+    fd->flags |= FILE_WRITTEN_FLAG;
     return fd->fs->write(buf, size, count, fd->fs_data);
 }
 
@@ -251,7 +252,7 @@ int fclose(file_descriptor_t *fd) {
     return fd->fs->close(fd->fs_data);
 }
 
-dir_descriptor_t fopendir(char *path, uint32_t flags) {
+dir_descriptor_t *fopendir(char *path, uint32_t flags) {
     //get the mount point
     mount_point_t *cur_mount_point = &head_mount_point;
     while (path[0] == '/') {
@@ -268,17 +269,18 @@ dir_descriptor_t fopendir(char *path, uint32_t flags) {
     }
     if (cur_mount_point == NULL) {
         //TODO: allow setting up default filesystem for non-mounted paths
-        dir_descriptor_t ret = {0, 0, NULL, NULL};
-        ret.flags |= FILE_NOTFOUND_FLAG;
+        dir_descriptor_t *ret = (dir_descriptor_t*)kmalloc(sizeof(dir_descriptor_t));
+        ret->flags = FILE_NOTFOUND_FLAG;
         return ret;
     }
 
-    dir_descriptor_t ret;
+    dir_descriptor_t *ret = (dir_descriptor_t*)kmalloc(sizeof(dir_descriptor_t));
     filesystem_t *fs = cur_mount_point->fs;
-    ret.fs = fs;
-    ret.id = next_file_id();
-    ret.fs_data = fs->opendir(path, flags);
-    ret.flags = *(uint32_t*)ret.fs_data;
+    ret->fs = fs;
+    ret->id = next_file_id();
+    ret->fs_data = fs->opendir(path, flags);
+    ret->flags = *(uint32_t*)ret->fs_data;
+    current_process->fds[ret->id] = (file_descriptor_t *)ret;
     return ret;
 }
 

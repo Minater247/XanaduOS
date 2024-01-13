@@ -11,6 +11,7 @@
 #define FILE_ISOPENDIR_FLAG 0x2
 #define FILE_ISDIR_FLAG 0x4 //set if found dir, expecting file
 #define FILE_ISFILE_FLAG 0x8 //set if found file, expecting dir
+#define FILE_WRITTEN_FLAG 0x10
 #define FILE_NOTFOUND_FLAG 0x80000000
 
 #define SEEK_SET 0
@@ -67,11 +68,11 @@ void get_path_item(char *path, char *retbuf, uint8_t item);
 uint32_t get_path_length(char *path);
 int register_filesystem(filesystem_t *to_register);
 int mount_filesystem(uint32_t filesystem_id, char *path);
-file_descriptor_t fopen(char *path, uint32_t flags);
+file_descriptor_t *fopen(char *path, uint32_t flags);
 int fread(char *buf, uint32_t size, uint32_t count, file_descriptor_t *fd);
 int fwrite(char *buf, uint32_t size, uint32_t count, file_descriptor_t *fd);
 int fclose(file_descriptor_t *fd);
-dir_descriptor_t fopendir(char *path, uint32_t flags);
+dir_descriptor_t *fopendir(char *path, uint32_t flags);
 simple_return_t freaddir(dir_descriptor_t *dd);
 int fclosedir(dir_descriptor_t *dd);
 uint32_t fgetsize(void *fd);

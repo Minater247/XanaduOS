@@ -11,6 +11,7 @@
 #include "inc_c/ramdisk.h"
 #include "inc_c/serial.h"
 #include "inc_c/process.h"
+#include "inc_c/devices.h"
 
 extern uint32_t given_magic;
 extern uint32_t given_mboot;

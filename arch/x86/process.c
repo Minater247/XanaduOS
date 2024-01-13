@@ -45,8 +45,4 @@ void process_initialize() {
     head_process->max_fds = 256;
     memset(head_process->fds, 0, sizeof(head_process->fds));
     current_process = head_process;
-
-    serial_dump_process(head_process);
-
-    terminal_printf("Initialized process system.\n");
 }
