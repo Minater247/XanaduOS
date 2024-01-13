@@ -627,7 +627,6 @@ void terminal_printf(const char *format, ...)
 uint32_t seek_pos = 0;
 
 int trm_dev_write(void *ptr, uint32_t size) {
-    //this one, however, is easy enough!
     terminal_write(ptr, size);
     return size;
 }

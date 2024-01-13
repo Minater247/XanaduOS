@@ -18,6 +18,10 @@
 #define SEEK_CUR 1
 #define SEEK_END 2
 
+#define stdin current_process->fds[0]
+#define stdout current_process->fds[1]
+#define stderr current_process->fds[2]
+
 typedef struct {
     uint32_t flags;
     char *name;

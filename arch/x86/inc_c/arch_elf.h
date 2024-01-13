@@ -1,5 +1,5 @@
-#ifndef _ELF_x86_H
-#define _ELF_x86_H
+#ifndef _arch_elf_H
+#define _arch_elf_H
 
 #include <stdint.h>
 

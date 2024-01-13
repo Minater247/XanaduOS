@@ -38,7 +38,7 @@ device_file_t *dopen(char *path, uint32_t flags) {
     //look for a device with the given name using strncmp
     device_t *current_device = device_head;
     while (current_device != NULL) {
-        if (strncmp(current_device->name, path, path_length) == 0) {
+        if (strlen(current_device->name) == path_length && strncmp(current_device->name, path, path_length) == 0) {
             //if we found a device, allocate a device_file_t and return it
             device_file_t *ret = (device_file_t *)kmalloc(sizeof(device_file_t));
             ret->flags = FILE_ISFILE_FLAG | FILE_ISOPEN_FLAG;
@@ -116,6 +116,22 @@ int dclosedir(device_dir_t *dir) {
 
 uint32_t dgetsize(void *fd) {
     UNUSED(fd);
+    return 0;
+}
+
+int device_rw_empty(void *ptr, uint32_t size) {
+    UNUSED(ptr);
+    UNUSED(size);
+    return 0;
+}
+
+int device_seek_empty(uint32_t offset, uint8_t whence) {
+    UNUSED(offset);
+    UNUSED(whence);
+    return 0;
+}
+
+int device_tell_empty() {
     return 0;
 }
 

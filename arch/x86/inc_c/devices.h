@@ -27,5 +27,8 @@ typedef struct {
 
 void devices_initialize();
 int register_device(device_t *device);
+int device_rw_empty(void *ptr, uint32_t size);
+int device_seek_empty(uint32_t offset, uint8_t whence);
+int device_tell_empty();
 
 #endif

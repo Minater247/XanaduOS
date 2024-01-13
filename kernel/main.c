@@ -6,7 +6,7 @@
 #include "inc_c/boot.h"
 #include "include/filesystem.h"
 #include "inc_c/memory.h"
-#include "inc_c/elf_x86.h"
+#include "inc_c/arch_elf.h"
 #include "inc_c/process.h"
 #include "include/errors.h"
 
@@ -17,8 +17,9 @@
 void kernel_main() {
 	boot_initialize();
 
-
-	file_descriptor_t *terminal_buffer = fopen("/dev/trm", 0);
+	fopen("/dev/kbd0", 0); // stdin
+	fopen("/dev/trm", 0); // stdout
+	fopen("/dev/trm", 0); // stderr
 
 
 	//attempt to load hello.elf
@@ -60,10 +61,9 @@ void kernel_main() {
 	terminal_printf("Testing WRITE syscall...\n");
 	//we have to use inline assembly since syscall_write hasn't been implemented yet
 	char *str = "Hello, world!\n";
-	asm volatile ("xchg %bx, %bx;");
 	asm volatile (
 		"movl $1, %%eax;"      // syscall number (sys_write)
-		"movl $0, %%ebx;"      // file descriptor (stdout)
+		"movl $1, %%ebx;"      // file descriptor (stdout)
 		"movl %0, %%ecx;"      // buffer to write from
 		"movl $14, %%edx;"     // number of bytes
 		"int $0x80;"           // call kernel
@@ -72,45 +72,28 @@ void kernel_main() {
 		: "eax", "ebx", "ecx", "edx"
 	);
 
-	terminal_printf("Free fds: %d\n", current_process->max_fds - current_process->num_fds);
 
 
-	if (fd->flags & FILE_NOTFOUND_FLAG || !(fd->flags & FILE_ISOPEN_FLAG))
-	{
-		terminal_printf("Could not locate /dev/trm!\n");
-		while (true);
-	}
+	file_descriptor_t *fd2 = stdout; //attempt to load /dev/trm again
 
 	//write to /dev/trm
-	fwrite("Hello from /dev/trm!\n", 1, 21, terminal_buffer);
+	fwrite("Hello from /dev/trm!\n", 1, 21, fd2);
 	//try to read from /dev/trm
 	char buf2[20];
-	fread(buf2, 1, 20, terminal_buffer);
+	fread(buf2, 1, 20, fd2);
 	terminal_printf("Read from /dev/trm: %s", buf2);
 
-	file_descriptor_t *fd2 = current_process->fds[0]; //attempt to load /dev/trm again
-	kassert(fd2 == terminal_buffer); //should be the same file descriptor
-
 	//try and write something else to it
-	fwrite("\nHello from a file descriptor ID!\n", 1, 32, fd2);
+	fwrite("\nHello from a file descriptor ID!\n", 1, 34, fd2);
 
-
-
-	fclose(fd);
-
-
-	char buf[2] = {0, 0};
+	
+    char buf;
+	file_descriptor_t *kbd = stdin;
 	while (true) {
-		char code = keyboard_getchar();
-		if (code != 0)
+		int read = fread(&buf, 1, 1, kbd);
+		if (read != 0)
 		{
-			if (code == '\n')
-			{
-				terminal_printf("\n");
-			} else {
-				buf[0] = code;
-				terminal_printf(buf);
-			}
+			terminal_putchar(buf);
 		}
 	}
 
