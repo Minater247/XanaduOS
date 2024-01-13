@@ -11,3 +11,4 @@ ELF: Loading program header 0 into memory
 
 	VA: 0x0-0x1000, 1 pages
 Got syscall: 0x1
+Got syscall: 0x1

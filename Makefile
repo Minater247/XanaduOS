@@ -8,8 +8,8 @@ OBJCOPY = i686-elf-objcopy.exe
 SFILES := $(wildcard arch/$(ARCH)/*.s)
 CFILES := $(wildcard arch/$(ARCH)/*.c) $(wildcard kernel/*.c) $(wildcard kernel/*/*.c) $(wildcard arch/$(ARCH)/*/*.c)
 
-CFLAGS = -std=gnu99 -ffreestanding -O2 -Wall -Wextra -Iarch/$(ARCH) -Ikernel/include -D__ARCH_$(ARCH)__
-LDFLAGS = -T arch/$(ARCH)/linker.ld -O2 -nostdlib -ffreestanding -lgcc
+CFLAGS = -std=gnu99 -ffreestanding -O3 -Wall -Wextra -Iarch/$(ARCH) -Ikernel/include -D__ARCH_$(ARCH)__
+LDFLAGS = -T arch/$(ARCH)/linker.ld -O3 -nostdlib -ffreestanding -lgcc
 
 OBJ = $(SFILES:.s=.o) $(CFILES:.c=.o)
 OBJ_DEBUG = $(SFILES:.s=.dbs) $(CFILES:.c=.dbo)

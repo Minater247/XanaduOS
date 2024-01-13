@@ -18,6 +18,9 @@ void kernel_main() {
 	boot_initialize();
 
 
+	file_descriptor_t *terminal_buffer = fopen("/dev/trm", 0);
+
+
 	//attempt to load hello.elf
 	file_descriptor_t *fd = fopen("/mnt/ramdisk/bin/hello.elf", 0);
 	if (fd->flags & FILE_NOTFOUND_FLAG || !(fd->flags & FILE_ISOPEN_FLAG))
@@ -53,9 +56,6 @@ void kernel_main() {
 	int ret = entry_point();
 	terminal_printf("Returned: %d\n", ret);
 
-
-	fd = fopen("/dev/trm", 0);
-
 	//test WRITE syscall on "Hello, world!"
 	terminal_printf("Testing WRITE syscall...\n");
 	//we have to use inline assembly since syscall_write hasn't been implemented yet
@@ -82,17 +82,17 @@ void kernel_main() {
 	}
 
 	//write to /dev/trm
-	fwrite("Hello from /dev/trm!\n", 1, 20, fd);
+	fwrite("Hello from /dev/trm!\n", 1, 21, terminal_buffer);
 	//try to read from /dev/trm
 	char buf2[20];
-	fread(buf2, 1, 20, fd);
+	fread(buf2, 1, 20, terminal_buffer);
 	terminal_printf("Read from /dev/trm: %s", buf2);
 
 	file_descriptor_t *fd2 = current_process->fds[0]; //attempt to load /dev/trm again
-	kassert(fd2 == fd); //should be the same file descriptor
+	kassert(fd2 == terminal_buffer); //should be the same file descriptor
 
 	//try and write something else to it
-	fwrite("Hello from a file descriptor ID!\n", 1, 32, fd2);
+	fwrite("\nHello from a file descriptor ID!\n", 1, 32, fd2);
 
 
 
