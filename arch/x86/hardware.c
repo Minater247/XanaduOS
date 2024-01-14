@@ -6,6 +6,6 @@
 
 void hardware_initialize()
 {
-    //timer_install();
+    timer_install();
     keyboard_install();
 }

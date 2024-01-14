@@ -71,6 +71,9 @@ debug: debug_iso
 # use bochs
 	"/mnt/c/Program Files/Bochs-2.7/bochsdbg.exe" -f bochsrc.txt -q
 
+qdbg: debug_iso
+	qemu-system-i386 -cdrom os_dbg.iso -s -S -monitor stdio -d int -D ./q_debug.log -serial file:serial.out
+
 debug_term:
 	gdb -ex "target remote localhost:1234" -ex "symbol-file kernel.bin" -ex "target remote localhost:1234"
 

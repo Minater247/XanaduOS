@@ -57,7 +57,8 @@ void serial_printf(const char *format, ...)
     va_list args;
     va_start(args, format);
     char buffer[32];
-    for (size_t i = 0; i < strlen(format); i++)
+    size_t len = strlen(format);
+    for (size_t i = 0; i < len; i++)
     {
         if (format[i] == '%')
         {

@@ -70,18 +70,8 @@ typedef struct {
     int (*stat)(void *file, stat_t *statbuf);
     simple_return_t (*readdir)(void *dir);
     int (*closedir)(void *dir);
+    void *(*copy)(void *fd); //both should be file_descriptor_t*, but we can't include that here
 } filesystem_t;
-
-typedef struct fs_node {
-    filesystem_t *fs;
-    struct fs_node *next;
-} fs_node_t;
-
-typedef struct mount_point {
-    char *path;
-    filesystem_t *fs;
-    struct mount_point *next;
-} mount_point_t;
 
 //file descriptor
 //The first item in fs_data must be a uint32_t containing the flags for the file.
@@ -99,6 +89,17 @@ typedef struct {
     void *fs_data;
 } dir_descriptor_t;
 
+typedef struct fs_node {
+    filesystem_t *fs;
+    struct fs_node *next;
+} fs_node_t;
+
+typedef struct mount_point {
+    char *path;
+    filesystem_t *fs;
+    struct mount_point *next;
+} mount_point_t;
+
 void get_path_item(char *path, char *retbuf, uint8_t item);
 uint32_t get_path_length(char *path);
 int register_filesystem(filesystem_t *to_register);
@@ -113,5 +114,6 @@ int fclosedir(dir_descriptor_t *dd);
 int fseek(file_descriptor_t *fd, uint32_t offset, uint8_t whence);
 int ftell(file_descriptor_t *fd);
 int fstat(file_descriptor_t *fd, stat_t *statbuf);
+file_descriptor_t *copy_descriptor(file_descriptor_t *fd, uint32_t id);
 
 #endif

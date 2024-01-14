@@ -254,17 +254,17 @@ void irq_install() {
 
 void irq_handler(regs_t *r) {
     void (*handler)(regs_t *r);
-
-    handler = irq_routines[r->int_no - 32];
-    if (handler) {
-        handler(r);
-    }
     
     if (r->int_no >= 40) {
         outb(0xA0, 0x20);
     }
     
     outb(0x20, 0x20);
+
+    handler = irq_routines[r->int_no - 32];
+    if (handler) {
+        handler(r);
+    }
 }
 
 void idt_initialize() {

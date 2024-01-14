@@ -7,29 +7,30 @@
 #include "inc_c/serial.h"
 #include "inc_c/arch_elf.h"
 #include "inc_c/memory.h"
+#include "../../kernel/include/filesystem.h"
 
 elf_load_result_t elf_load_executable(void *elf_file) {
     ELF32_EHDR *elf_header = (ELF32_EHDR *)elf_file;
 
     //ensure the file is an ELF file
     if (elf_header->e_ident[EI_MAG0] != ELFMAG0 || elf_header->e_ident[EI_MAG1] != ELFMAG1 || elf_header->e_ident[EI_MAG2] != ELFMAG2 || elf_header->e_ident[EI_MAG3] != ELFMAG3) {
-        return (elf_load_result_t){-1, NULL}; //not an ELF file
+        return (elf_load_result_t){ELF_ERR_NOT_ELF_FILE, NULL}; //not an ELF file
     }
 
     if (elf_header->e_ident[EI_CLASS] != ELFCLASS32) {
-        return (elf_load_result_t){-2, NULL}; //not a 32-bit ELF file
+        return (elf_load_result_t){ELF_ERR_NOT_32BIT, NULL}; //not a 32-bit ELF file
     }
 
     if (elf_header->e_ident[EI_DATA] != ELFDATA2LSB) {
-        return (elf_load_result_t){-3, NULL}; //not a little-endian ELF file
+        return (elf_load_result_t){ELF_ERR_NOT_LITTLE_ENDIAN, NULL}; //not a little-endian ELF file
     }
 
     if (elf_header->e_ident[EI_VERSION] != EV_CURRENT) {
-        return (elf_load_result_t){-4, NULL}; //not a current version ELF file
+        return (elf_load_result_t){ELF_ERR_NOT_CURRENT_VERSION, NULL}; //not a current version ELF file
     }
 
     if (elf_header->e_type != ET_EXEC) {
-        return (elf_load_result_t){-5, NULL}; //not an executable ELF file
+        return (elf_load_result_t){ELF_ERR_NOT_EXECUTABLE, NULL}; //not an executable ELF file
     }
 
     // serial_printf("Got ELF file\n");
@@ -74,10 +75,37 @@ elf_load_result_t elf_load_executable(void *elf_file) {
             memset((void *)(program_header->p_vaddr + program_header->p_filesz), 0, program_header->p_memsz - program_header->p_filesz);
         } else {
             // serial_printf("ELF: Unhandled program header type %d\n", program_header->p_type);
-            return (elf_load_result_t){-6, NULL}; //unhandled program header type
+            return (elf_load_result_t){ELF_ERR_INVALID_SECTION, NULL}; //unhandled program header type
         }
     }
 
 
-    return (elf_load_result_t){0, (void *)elf_header->e_entry};
+    return (elf_load_result_t){ELF_ERR_NONE, (void *)elf_header->e_entry};
+}
+
+
+elf_load_result_t elf_load_executable_path(char *path) {
+    file_descriptor_t *fd = fopen(path, 0);
+    if (fd->flags & FILE_NOTFOUND_FLAG || !(fd->flags & FILE_ISOPEN_FLAG)) {
+        return (elf_load_result_t){ELF_ERR_NOT_ELF_FILE, NULL};
+    }
+
+    stat_t stat;
+    int stat_ret = fstat(fd, &stat);
+    if (stat_ret != 0) {
+        return (elf_load_result_t){ELF_ERR_NOT_ELF_FILE, NULL};
+    }
+    int size = stat.st_size;
+
+    char *elfbuf = kmalloc(size);
+    int read = fread(elfbuf, 1, size, fd);
+    if (read != size) {
+        return (elf_load_result_t){ELF_ERR_NOT_ELF_FILE, NULL};
+    }
+
+    fclose(fd);
+
+    elf_load_result_t loaded = elf_load_executable(elfbuf);
+    kfree(elfbuf);
+    return loaded;
 }

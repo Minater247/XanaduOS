@@ -17,13 +17,11 @@ void timer_phase(int hz)
 
 void timer_interrupt_handler(regs_t *r)
 {
-    UNUSED(r);
     static uint32_t tick = 0;
     tick++;
-    if (tick % 18 == 0)
-    {
-        terminal_printf("Tick\n");
-        //we will have scheduling here at some point
+    if (tick % 18 == 0) {
+        serial_printf("Tick: %d\n", tick);
+        switch_process(r);
     }
 }
 

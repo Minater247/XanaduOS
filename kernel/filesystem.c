@@ -227,6 +227,15 @@ file_descriptor_t *fopen(char *path, uint32_t flags) {
     return ret;
 }
 
+file_descriptor_t *copy_descriptor(file_descriptor_t *fd, uint32_t id) {
+    file_descriptor_t *ret = (file_descriptor_t*)kmalloc(sizeof(file_descriptor_t));
+    ret->fs = fd->fs;
+    ret->fs_data = fd->fs->copy(fd->fs_data);
+    ret->flags = fd->flags;
+    ret->id = id;
+    return ret;
+}
+
 int fread(char *buf, uint32_t size, uint32_t count, file_descriptor_t *fd) {
     return fd->fs->read(buf, size, count, fd->fs_data);
 }

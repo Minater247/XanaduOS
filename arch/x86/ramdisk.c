@@ -261,6 +261,17 @@ int rclosedir(ramdisk_dir_t *dir) {
     return 0;
 }
 
+void *rcopy(void *file_in) {
+    ramdisk_file_t *file = (ramdisk_file_t*)file_in;
+    ramdisk_file_t *ret = (ramdisk_file_t*)kmalloc(sizeof(ramdisk_file_t));
+    ret->flags = file->flags;
+    ret->length = file->length;
+    ret->addr = file->addr;
+    ret->seek_pos = file->seek_pos;
+    ret->mode = file->mode;
+    return ret;
+}
+
 int rstat(void *file_in, stat_t *statbuf) {
     ramdisk_file_t *file = (ramdisk_file_t*)file_in; //for some reason, this is necessary to get the compiler to stop complaining
     if (!(file->flags & FILE_ISOPEN_FLAG)) {
@@ -322,6 +333,7 @@ void ramdisk_initialize(multiboot_info_t *mboot_info) {
     ramdisk_fs.readdir = (simple_return_t(*)(void*))rreaddir;
     ramdisk_fs.closedir = (int(*)(void*))rclosedir;
     ramdisk_fs.stat = rstat;
+    ramdisk_fs.copy = rcopy;
     ramdisk_fs_registered = register_filesystem(&ramdisk_fs);
     if (!ramdisk_fs_registered) {
         kpanic("Failed to register ramdisk filesystem!\n");

@@ -201,6 +201,15 @@ int unregister_device(device_t *device) {
     return 0;
 }
 
+void *dcopy(void *fd) {
+    device_file_t *file = (device_file_t*)fd;
+    device_file_t *ret = (device_file_t*)kmalloc(sizeof(device_file_t));
+    ret->flags = file->flags;
+    ret->device = file->device;
+    ret->mode = file->mode;
+    return ret;
+}
+
 int dstat(void *file_in, stat_t *statbuf) {
     device_file_t *file = (device_file_t*)file_in; //for some reason, this is necessary to get the compiler to stop complaining
     if (!(file->flags & FILE_ISOPEN_FLAG)) {
@@ -242,6 +251,7 @@ void devices_initialize() {
     device_fs.opendir = (void*(*)(char*, uint32_t))dopendir;
     device_fs.readdir = (simple_return_t(*)(void*))dreaddir;
     device_fs.closedir = (int(*)(void*))dclosedir;
+    device_fs.copy = dcopy;
     device_fs_registered = register_filesystem(&device_fs);
     if (!device_fs_registered) {
         kpanic("Failed to register device filesystem!\n");

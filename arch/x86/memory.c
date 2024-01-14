@@ -10,39 +10,6 @@
 #include "../../kernel/include/errors.h"
 #include "../../kernel/include/unused.h"
 
-typedef struct heap_header
-{
-    uint32_t magic;
-    uint32_t length;
-    bool free;
-    struct heap_header *next;
-    struct heap_header *prev;
-} __attribute__((packed)) heap_header_t;
-
-typedef struct memory_region
-{
-    uint32_t start;
-    uint32_t end;
-    struct memory_region *next;
-} __attribute__((packed)) memory_region_t;
-
-typedef struct bitmap_1024
-{
-    uint32_t bitmap[32];
-} __attribute__((packed)) bitmap_1024_t;
-
-typedef struct {
-    uint32_t pt_entry[1024];
-} __attribute__((packed)) page_table_t;
-
-typedef struct {
-    uint32_t entries[1024];
-    uint32_t virt[1024]; //virtual addresses of the page tables
-    bool is_full[1024];
-    uint32_t phys_addr;
-} __attribute__((packed)) page_directory_t;
-
-
 #define HEAP_MAGIC 0xFEAF2004
 
 extern uint8_t KERNEL_END; // defined in linker.ld
@@ -177,6 +144,8 @@ void memory_initialize(multiboot_info_t *mboot_info)
         memset(page_directory_bitmaps[entry.pd_entry]->bitmap, 0xFF, sizeof(page_directory_bitmaps[entry.pd_entry]->bitmap));
     }
 
+    kernel_pd.phys_addr = (uint32_t)&page_directory - 0xC0000000;
+
     prealloc_table = (page_table_t *)kmalloc_ap(sizeof(page_table_t), &prealloc_phys);
     memset(prealloc_table->pt_entry, 0, sizeof(prealloc_table->pt_entry));
     prealloc_bitmap = (bitmap_1024_t *)kmalloc(sizeof(bitmap_1024_t));
@@ -230,7 +199,7 @@ page_table_entry_t first_free_page()
                 }
                 region = region->next;
             }
-        } else if (kernel_pd.is_full[i]) {
+        } else if (current_pd->is_full[i]) {
             continue;
         }
         for (uint32_t j = 0; j < 32; j++)
@@ -300,6 +269,7 @@ page_directory_t *clone_page_directory(page_directory_t *directory) {
 
 
 void switch_page_directory(page_directory_t *directory) {
+    //bochs magic breakpoint
     current_pd = directory;
     asm volatile("mov %0, %%cr3":: "r"(directory->phys_addr));
 }
