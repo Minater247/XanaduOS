@@ -1,23 +1,34 @@
-.global switch_stack_and_jump
-switch_stack_and_jump:
-    xchg %bx, %bx
-    movl 8(%esp), %ebx # second argument, the function pointer
-    movl 4(%esp), %eax # first argument, a location to build a stack
-    movl %eax, %esp # set the stack pointer to the location
-    movl %esp, %ebp # by setting the EBP to the ESP, we configure a new stack
-    sti # enable interrupts
-    jmp *%ebx # jump to the function pointer
+.section .text
 
-.global switch_stack
-switch_stack:
-    movl 8(%esp), %ebx # second argument, the stack frame pointer
-    movl 4(%esp), %eax # first argument, the stack pointer
-    xchg %bx, %bx
+.extern timer_interrupt_handler
+.globl irq0
 
-    movl %ebx, %ebp # restore the stack frame
-    movl %eax, %esp # restore the top of the stack
+# Not the same file, but the same definition as in tables_asm.s
+irq0:
+    cli
+    pusha
+    pushl %esp
+    pushl %ebp
+    call timer_interrupt_handler
 
-    popal # restore all registers
+.globl init_program_and_jump
+init_program_and_jump:
+    movl 8(%esp), %ebx
+    movl 4(%esp), %eax
+    movl %eax, %esp
+    movl %esp, %ebp
+    sti
+    jmp *%ebx
 
-    sti # OK for interrupts at this point
-    iret # perform a return from interrupt since the last task was interrupted
+.globl jump_to_program
+jump_to_program:
+    movl 8(%esp), %ebx
+    movl 4(%esp), %eax
+
+    movl %ebx, %ebp
+    movl %eax, %esp
+
+    popa # This is the important bit, we restore whatever was on the stack
+
+    sti
+    iret

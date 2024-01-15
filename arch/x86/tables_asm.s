@@ -122,9 +122,6 @@ isr_common_stub:
         push $\num+32
         jmp irq_common_stub
 .endm
-
-/* IRQ stubs */
-IRQ 0
 IRQ 1
 IRQ 2
 IRQ 3

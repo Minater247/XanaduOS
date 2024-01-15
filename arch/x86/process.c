@@ -9,6 +9,7 @@
 #include "inc_c/process.h"
 #include "inc_c/arch_elf.h"
 #include "../../kernel/include/errors.h"
+#include "inc_c/io.h"
 
 // typedef struct process {
 //     uint32_t pid;
@@ -22,6 +23,9 @@
 process_t *head_process = NULL;
 process_t *current_process = NULL;
 uint32_t next_pid = 0;
+
+uint32_t interrupt_esp;
+uint32_t interrupt_ebp;
 
 process_t kernel_process;
 
@@ -81,72 +85,55 @@ void create_task(void *entry_point, void *stack) {
     }
     current_process->next = new_process;
 
-    serial_printf("New process->next: 0x%x\n", new_process->next);
-
     new_process->entry = (uint32_t)entry_point;
 }
 
-extern void switch_stack(uint32_t esp, uint32_t ebp);
-extern void switch_stack_and_jump(uint32_t esp, uint32_t entry);
+extern void jump_to_program(uint32_t esp, uint32_t ebp);
+extern void init_program_and_jump(uint32_t esp, uint32_t entry_point);
 
-void switch_process() {
-    if (head_process == NULL) {
-        return;
+void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
+{
+	outb(0x20, 0x20); //this isn't a regular IRQ handler, this is coming directly tables_asm, so we need to send an EOI to the PIC
+
+	process_t *old_process = current_process;
+
+	if (old_process->status == TASK_STATUS_RUNNING)
+	{
+        // Already running, so save context
+		old_process->ebp = ebp;
+		old_process->esp = esp;
+	}
+
+	process_t *new_process = old_process->next;
+    if (new_process == NULL)
+    {
+        new_process = head_process; // If we ran off the end of the list, go back to the beginning
+    }
+    while (new_process->status != TASK_STATUS_RUNNING && new_process->status != TASK_STATUS_INITIALIZED)
+    {
+        new_process = new_process->next;
+        if (new_process == NULL)
+        {
+            new_process = head_process; // If we ran off the end of the list, go back to the beginning
+        }
     }
 
-    serial_printf("\n\nSwitching from process: 0x%x (%d)\n", current_process, current_process->pid);
+    current_process = new_process;
 
-    uint32_t esp, ebp;
-    asm volatile("mov %%esp, %0" : "=r"(esp));
-    asm volatile("mov %%ebp, %0" : "=r"(ebp));
+	if (new_process->status == TASK_STATUS_INITIALIZED)
+	{
+		new_process->status = TASK_STATUS_RUNNING;
+        // First time running, so set up stack and jump to entry point
+		init_program_and_jump(new_process->esp, new_process->entry);
+	}
 
-    serial_printf("Old esp: 0x%x, ebp: 0x%x\n", esp, ebp);
+    // Otherwise, we're already running, so just restore context and return
+	jump_to_program(new_process->esp, new_process->ebp);
 
-    process_t *old_process = current_process;
+	kpanic("Something went wrong with the scheduler!");
+}
 
-    if (old_process->status == TASK_STATUS_RUNNING) {
-        old_process->esp = esp;
-        old_process->ebp = ebp;
-    }
 
-    serial_printf("Old process: 0x%x\n", old_process);
-
-    // Find next process
-    process_t *next_process = old_process->next;
-    if (next_process == NULL) {
-        next_process = head_process;
-    }
-
-    serial_printf("Next process: 0x%x\n", next_process);
-
-    serial_printf("Task switch: %d -> %d\n", old_process->pid, next_process->pid);
-
-    current_process = next_process;
-
-    serial_printf("Process nexts: old 0x%x->0x%x, new 0x%x->0x%x\n", old_process, old_process->next, next_process, next_process->next);
-
-    if (next_process->status == TASK_STATUS_INITIALIZED) {
-        next_process->status = TASK_STATUS_RUNNING;
-
-        serial_printf("ESP: 0x%x, ENT: 0x%x\n", next_process->esp, next_process->entry);
-
-        serial_printf("Process nexts INIT: old 0x%x->0x%x, new 0x%x->0x%x\n", old_process, old_process->next, next_process, next_process->next);
-
-        serial_dump_process();
-
-        asm volatile ("xchg %bx, %bx");
-
-        switch_stack_and_jump(next_process->esp, next_process->entry);
-    }
-
-    serial_printf("Switching to process stack: 0x%x, 0x%x\n", next_process->esp, next_process->ebp);
-
-    serial_dump_process();
-
-    serial_printf("Process nexts NORM: old 0x%x->0x%x, new 0x%x->0x%x\n", old_process, old_process->next, next_process, next_process->next);
-
-    asm volatile ("mov %%esp, %0" : "=r"(next_process->esp));
-    asm volatile ("mov %%ebp, %0" : "=r"(next_process->ebp));
-
-    return;
+int process_load_elf(char *path) {
+    
 }

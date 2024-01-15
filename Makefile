@@ -7,12 +7,13 @@ OBJCOPY = i686-elf-objcopy.exe
 
 SFILES := $(wildcard arch/$(ARCH)/*.s)
 CFILES := $(wildcard arch/$(ARCH)/*.c) $(wildcard kernel/*.c) $(wildcard kernel/*/*.c) $(wildcard arch/$(ARCH)/*/*.c)
+NFILES := $(wildcard arch/$(ARCH)/*.nsm)
 
 CFLAGS = -std=gnu99 -ffreestanding -O3 -Wall -Wextra -Iarch/$(ARCH) -Ikernel/include -D__ARCH_$(ARCH)__
 LDFLAGS = -T arch/$(ARCH)/linker.ld -O3 -nostdlib -ffreestanding -lgcc
 
-OBJ = $(SFILES:.s=.o) $(CFILES:.c=.o)
-OBJ_DEBUG = $(SFILES:.s=.dbs) $(CFILES:.c=.dbo)
+OBJ = $(SFILES:.s=.o) $(CFILES:.c=.o) $(NFILES:.nsm=.o)
+OBJ_DEBUG = $(SFILES:.s=.dbs) $(CFILES:.c=.dbo) $(NFILES:.nsm=.o)
 
 all: $(OBJ) link
 
@@ -34,11 +35,19 @@ link_debug:
 	@echo Compiling $<...
 	@$(CC) -c $< $(CFLAGS) -o $@
 
+%.o: %.nsm
+	@echo Assembling $<...
+	@nasm -f elf32 $< -o $@
+
 %.dbo: %.c
 	$(CC) -c $< $(CFLAGS) -g -o $@
 
 %.dbs: %.s
 	$(AS) -g -o $@ $<
+
+%.dbo: %.nsm
+	@echo Assembling $<...
+	@nasm -f elf32 $< -o $@
 
 iso: all
 # Ensure kernel.bin is multiboot compliant, if not, error

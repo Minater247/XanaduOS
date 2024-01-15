@@ -15,18 +15,7 @@ void timer_phase(int hz)
     outb(0x40, divisor >> 8);
 }
 
-void timer_interrupt_handler(regs_t *r)
-{
-    static uint32_t tick = 0;
-    tick++;
-    if (tick % 18 == 0) {
-        serial_printf("Tick: %d\n", tick);
-        switch_process(r);
-    }
-}
-
 void timer_install()
 {
-    irq_install_handler(0, timer_interrupt_handler);
     timer_phase(100);
 }
