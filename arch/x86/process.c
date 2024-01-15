@@ -65,7 +65,7 @@ void process_initialize()
     terminal_printf("Address of head process' next field: 0x%x\n", &head_process->next);
 }
 
-void create_task(void *entry_point, void *stack) {
+process_t *create_task(void *entry_point, void *stack) {
     process_t *new_process = (process_t *)kmalloc(sizeof(process_t));
 
     new_process->pid = next_pid++;
@@ -77,6 +77,11 @@ void create_task(void *entry_point, void *stack) {
     new_process->esp = (uint32_t)stack;
     new_process->ebp = (uint32_t)stack;
     memset(new_process->fds, 0, sizeof(new_process->fds));
+    for (int i = 0; i < 256; i++) {
+        if (current_process->fds[i] != NULL) {
+            new_process->fds[i] = copy_descriptor(current_process->fds[i], i);
+        }
+    }
 
     // Add to linked list
     process_t *current_process = head_process;
@@ -86,6 +91,8 @@ void create_task(void *entry_point, void *stack) {
     current_process->next = new_process;
 
     new_process->entry = (uint32_t)entry_point;
+
+    return new_process;
 }
 
 extern void jump_to_program(uint32_t esp, uint32_t ebp);
@@ -120,6 +127,8 @@ void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
 
     current_process = new_process;
 
+    switch_page_directory(new_process->pd);
+
 	if (new_process->status == TASK_STATUS_INITIALIZED)
 	{
 		new_process->status = TASK_STATUS_RUNNING;
@@ -135,5 +144,42 @@ void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
 
 
 int process_load_elf(char *path) {
-    
+	file_descriptor_t *fd = fopen("/mnt/ramdisk/bin/hello.elf", 0);
+	if (fd->flags & FILE_NOTFOUND_FLAG || !(fd->flags & FILE_ISOPEN_FLAG))
+	{
+		terminal_printf("Could not locate hello.elf!\n");
+		while (true);
+	}
+
+	stat_t stat;
+	int stat_ret = fstat(fd, &stat);
+	if (stat_ret != 0)
+	{
+		terminal_printf("Could not stat hello.elf!\n");
+		while (true);
+	}
+	int size = stat.st_size;
+
+	terminal_printf("Size of hello.elf: %d\n", size);
+	char *elfbuf = kmalloc(size);
+	int read = fread(elfbuf, 1, size, fd);
+	if (read != size)
+	{
+		terminal_printf("Could not read hello.elf!\n");
+		while (true);
+	}
+	terminal_printf("Read %d bytes from hello.elf\n", read);
+
+	fclose(fd);
+	
+	elf_load_result_t loaded = elf_load_executable(elfbuf);
+	if (loaded.code != 0)
+	{
+		terminal_printf("Could not load hello.elf! Error code: %d\n", loaded.code);
+		while (true);
+	}
+	kfree(elfbuf);
+
+    process_t *new_process = create_task((void *)loaded.entry_point, kmalloc(4096));
+    return new_process->pid;
 }

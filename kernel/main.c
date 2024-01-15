@@ -14,18 +14,18 @@
 #include "../arch/x86/drivers/keyboard.h"
 
 
-void print_stuff() {
-	while (true) {
-		terminal_printf("A");
-	}
-}
+// void print_stuff() {
+// 	while (true) {
+// 		terminal_printf("A");
+// 	}
+// }
 
-void print_more() {
-	while (true) {
-		terminal_printf("C");
-	}
+// void print_more() {
+// 	while (true) {
+// 		terminal_printf("C");
+// 	}
 
-}
+// }
 
 
 void kernel_main() {
@@ -35,15 +35,15 @@ void kernel_main() {
 	fopen("/dev/trm", 0); // stdout
 	fopen("/dev/trm", 0); // stderr
 
-	//int code = process_load_elf("/mnt/ramdisk/bin/hello.elf");
+	int code = process_load_elf("/mnt/ramdisk/bin/hello.elf");
 	//terminal_printf("Loaded ELF with PID %d\n", code);
 
-	create_task(&print_stuff, kmalloc(4096));
-	create_task(&print_more, kmalloc(4096));
+	// create_task(&print_stuff, kmalloc(4096));
+	// create_task(&print_more, kmalloc(4096));
 
-	while (true) {
-		terminal_printf("B");
-	}
+	// while (true) {
+	// 	terminal_printf("B");
+	// }
 
     char buf;
 	file_descriptor_t *kbd = stdin;

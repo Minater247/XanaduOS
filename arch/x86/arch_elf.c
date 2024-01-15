@@ -9,28 +9,37 @@
 #include "inc_c/memory.h"
 #include "../../kernel/include/filesystem.h"
 
+extern page_directory_t *current_pd;
+
 elf_load_result_t elf_load_executable(void *elf_file) {
+    asm volatile ("cli");
+
     ELF32_EHDR *elf_header = (ELF32_EHDR *)elf_file;
 
     //ensure the file is an ELF file
     if (elf_header->e_ident[EI_MAG0] != ELFMAG0 || elf_header->e_ident[EI_MAG1] != ELFMAG1 || elf_header->e_ident[EI_MAG2] != ELFMAG2 || elf_header->e_ident[EI_MAG3] != ELFMAG3) {
-        return (elf_load_result_t){ELF_ERR_NOT_ELF_FILE, NULL}; //not an ELF file
+        asm volatile ("sti");
+        return (elf_load_result_t){ELF_ERR_NOT_ELF_FILE, NULL, NULL}; //not an ELF file
     }
 
     if (elf_header->e_ident[EI_CLASS] != ELFCLASS32) {
-        return (elf_load_result_t){ELF_ERR_NOT_32BIT, NULL}; //not a 32-bit ELF file
+        asm volatile ("sti");
+        return (elf_load_result_t){ELF_ERR_NOT_32BIT, NULL, NULL}; //not a 32-bit ELF file
     }
 
     if (elf_header->e_ident[EI_DATA] != ELFDATA2LSB) {
-        return (elf_load_result_t){ELF_ERR_NOT_LITTLE_ENDIAN, NULL}; //not a little-endian ELF file
+        asm volatile ("sti");
+        return (elf_load_result_t){ELF_ERR_NOT_LITTLE_ENDIAN, NULL, NULL}; //not a little-endian ELF file
     }
 
     if (elf_header->e_ident[EI_VERSION] != EV_CURRENT) {
-        return (elf_load_result_t){ELF_ERR_NOT_CURRENT_VERSION, NULL}; //not a current version ELF file
+        asm volatile ("sti");
+        return (elf_load_result_t){ELF_ERR_NOT_CURRENT_VERSION, NULL, NULL}; //not a current version ELF file
     }
 
     if (elf_header->e_type != ET_EXEC) {
-        return (elf_load_result_t){ELF_ERR_NOT_EXECUTABLE, NULL}; //not an executable ELF file
+        asm volatile ("sti");
+        return (elf_load_result_t){ELF_ERR_NOT_EXECUTABLE, NULL, NULL}; //not an executable ELF file
     }
 
     // serial_printf("Got ELF file\n");
@@ -40,8 +49,11 @@ elf_load_result_t elf_load_executable(void *elf_file) {
     for (int i = 0; i < elf_header->e_phnum; i++) {
         ELF32_PHDR *program_header = (ELF32_PHDR *)((uint32_t)elf_file + elf_header->e_phoff + (i * elf_header->e_phentsize));
 
+        terminal_printf("ELF: Program header %d @ 0x%x is %d\n", i, program_header, program_header->p_type);
+
         if (program_header->p_type == PT_NULL) {
             // serial_printf("ELF: Ignoring program header %d because it is of type 0\n", i);
+            terminal_printf("ELF: Ignoring program header %d because it is of type 0\n", i);
         } else if (program_header->p_type == PT_LOAD) {
             //We need to load this section into memory
             // serial_printf("ELF: Loading program header %d into memory\n", i);
@@ -67,7 +79,17 @@ elf_load_result_t elf_load_executable(void *elf_file) {
             for (uint32_t i = 0; i < num_pages; i++) {
                 page_table_entry_t first_free = first_free_page();
                 alloc_page(aligned_vaddr + (i * 0x1000), (first_free.pd_entry * 0x400000) + (first_free.pt_entry * 0x1000), true, true, is_writable);
+
+                terminal_printf("ELF: Allocated page 0x%x -> 0x%x\n", aligned_vaddr + (i * 0x1000), (first_free.pd_entry * 0x400000) + (first_free.pt_entry * 0x1000));
             }
+
+            terminal_printf("PD[0] = 0x%x\n", current_pd->entries[0]);
+            terminal_printf("Entries addr phys = 0x%x\n", &current_pd->entries);
+            terminal_printf("PD[0][0] = 0x%x\n", ((page_table_t *)current_pd->virt[0])[0].pt_entry[0]);
+            uint32_t cr3;
+            asm volatile ("mov %%cr3, %0" : "=r"(cr3));
+            terminal_printf("CR3 = 0x%x against pd addr 0x%x\n", cr3, current_pd->phys_addr);
+            while (true);
 
             //copy the section into memory
             memcpy((void *)program_header->p_vaddr, (void *)((uint32_t)elf_file + program_header->p_offset), program_header->p_filesz);
@@ -75,32 +97,34 @@ elf_load_result_t elf_load_executable(void *elf_file) {
             memset((void *)(program_header->p_vaddr + program_header->p_filesz), 0, program_header->p_memsz - program_header->p_filesz);
         } else {
             // serial_printf("ELF: Unhandled program header type %d\n", program_header->p_type);
-            return (elf_load_result_t){ELF_ERR_INVALID_SECTION, NULL}; //unhandled program header type
+            asm volatile ("sti");
+            return (elf_load_result_t){ELF_ERR_INVALID_SECTION, NULL, NULL}; //unhandled program header type
         }
     }
 
 
-    return (elf_load_result_t){ELF_ERR_NONE, (void *)elf_header->e_entry};
+        asm volatile ("sti");
+        return (elf_load_result_t){ELF_ERR_NONE, (void *)elf_header->e_entry, current_pd};
 }
 
 
 elf_load_result_t elf_load_executable_path(char *path) {
     file_descriptor_t *fd = fopen(path, 0);
     if (fd->flags & FILE_NOTFOUND_FLAG || !(fd->flags & FILE_ISOPEN_FLAG)) {
-        return (elf_load_result_t){ELF_ERR_NOT_ELF_FILE, NULL};
+        return (elf_load_result_t){ELF_ERR_NOT_ELF_FILE, NULL, NULL};
     }
 
     stat_t stat;
     int stat_ret = fstat(fd, &stat);
     if (stat_ret != 0) {
-        return (elf_load_result_t){ELF_ERR_NOT_ELF_FILE, NULL};
+        return (elf_load_result_t){ELF_ERR_NOT_ELF_FILE, NULL, NULL};
     }
     int size = stat.st_size;
 
     char *elfbuf = kmalloc(size);
     int read = fread(elfbuf, 1, size, fd);
     if (read != size) {
-        return (elf_load_result_t){ELF_ERR_NOT_ELF_FILE, NULL};
+        return (elf_load_result_t){ELF_ERR_NOT_ELF_FILE, NULL, NULL};
     }
 
     fclose(fd);

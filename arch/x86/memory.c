@@ -288,7 +288,7 @@ void alloc_page(uint32_t virt, uint32_t phys, bool make, bool is_kernel, bool is
         kassert(prealloc_table != NULL);
         //we already have a preallocated space for this page table
         current_pd->virt[pd_entry] = (uint32_t)prealloc_table;
-        current_pd->entries[pd_entry] = prealloc_phys | 0x1;
+        current_pd->entries[pd_entry] = prealloc_phys | 0x3;
         if (!is_kernel) {
             current_pd->entries[pd_entry] |= 0x4;
         }

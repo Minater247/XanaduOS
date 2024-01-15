@@ -3,9 +3,12 @@
 
 #include <stdint.h>
 
+#include "inc_c/memory.h"
+
 typedef struct {
     int code;
     void *entry_point;
+    page_directory_t *pd;
 } elf_load_result_t;
 
 #define ELF_ERR_NONE 0
