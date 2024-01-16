@@ -64,8 +64,8 @@ typedef struct {
 } __attribute__((packed)) ramdisk_dir_t;
 
 void ramdisk_initialize();
-ramdisk_file_t *ropen(char *path, uint32_t flags);
-int rread(void *ptr, uint32_t size, uint32_t nmemb, ramdisk_file_t *file);
-int rseek(ramdisk_file_t *file, uint32_t offset, uint8_t whence);
+ramdisk_file_t *ropen(char *path, char *flags);
+int rread(void *ptr, size_t size, size_t nmemb, ramdisk_file_t *file);
+int rseek(ramdisk_file_t *file, size_t offset, int whence);
 
 #endif

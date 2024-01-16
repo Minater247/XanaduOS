@@ -195,7 +195,7 @@ int unmount_filesystem_by_path(char *path) {
     return 0;
 }
 
-file_descriptor_t *fopen(char *path, uint32_t flags) {
+file_descriptor_t *fopen(char *path, char *flags) {
     // Check whether this path matches a mount point
     mount_point_t *cur_mount_point = &head_mount_point;
     while (path[0] == '/') {
@@ -237,11 +237,11 @@ file_descriptor_t *copy_descriptor(file_descriptor_t *fd, uint32_t id) {
     return ret;
 }
 
-int fread(char *buf, uint32_t size, uint32_t count, file_descriptor_t *fd) {
+int fread(char *buf, size_t size, size_t count, file_descriptor_t *fd) {
     return fd->fs->read(buf, size, count, fd->fs_data);
 }
 
-int fwrite(char *buf, uint32_t size, uint32_t count, file_descriptor_t *fd) {
+int fwrite(char *buf, size_t size, size_t count, file_descriptor_t *fd) {
     fd->flags |= FILE_WRITTEN_FLAG;
     return fd->fs->write(buf, size, count, fd->fs_data);
 }
@@ -262,7 +262,7 @@ int fclose(file_descriptor_t *fd) {
     return fd->fs->close(fd->fs_data);
 }
 
-dir_descriptor_t *fopendir(char *path, uint32_t flags) {
+dir_descriptor_t *fopendir(char *path) {
     //get the mount point
     mount_point_t *cur_mount_point = &head_mount_point;
     while (path[0] == '/') {
@@ -288,7 +288,7 @@ dir_descriptor_t *fopendir(char *path, uint32_t flags) {
     filesystem_t *fs = cur_mount_point->fs;
     ret->fs = fs;
     ret->id = next_file_id();
-    ret->fs_data = fs->opendir(path, flags);
+    ret->fs_data = fs->opendir(path);
     ret->flags = *(uint32_t*)ret->fs_data;
     current_process->fds[ret->id] = (file_descriptor_t *)ret;
     return ret;
@@ -302,11 +302,11 @@ int fclosedir(dir_descriptor_t *dd) {
     return dd->fs->closedir(dd->fs_data);
 }
 
-int fseek(file_descriptor_t *fd, uint32_t offset, uint8_t whence) {
+int fseek(file_descriptor_t *fd, size_t offset, int whence) {
     return fd->fs->seek(fd->fs_data, offset, whence);
 }
 
-int ftell(file_descriptor_t *fd) {
+size_t ftell(file_descriptor_t *fd) {
     return fd->fs->tell(fd->fs_data);
 }
 

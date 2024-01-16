@@ -33,7 +33,7 @@ void syscall_handler(regs_t *regs) {
             }
             break;
         case SYSCALL_OPEN:
-            fd = fopen((char *)regs->ebx, regs->ecx);
+            fd = fopen((char *)regs->ebx, (char*)regs->ecx);
             if (fd->flags & FILE_NOTFOUND_FLAG) {
                 regs->eax = -1;
             } else {

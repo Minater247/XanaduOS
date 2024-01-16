@@ -12,10 +12,10 @@ typedef struct {
 typedef struct device {
     char name[64];
     uint32_t flags;
-    int (*read)(void *ptr, uint32_t size);
-    int (*write)(void *ptr, uint32_t size);
-    int (*seek)(uint32_t offset, uint8_t whence);
-    int (*tell)();
+    int (*read)(void *ptr, size_t size);
+    int (*write)(void *ptr, size_t size);
+    int (*seek)(size_t offset, int whence);
+    size_t (*tell)();
     //other functions generally return 0/NULL on success and -1/NULL on failure since devices are not files
     struct device *next;
 } device_t;
@@ -28,8 +28,8 @@ typedef struct {
 
 void devices_initialize();
 int register_device(device_t *device);
-int device_rw_empty(void *ptr, uint32_t size);
-int device_seek_empty(uint32_t offset, uint8_t whence);
-int device_tell_empty();
+int device_rw_empty(void *ptr, size_t size);
+int device_seek_empty(size_t offset, int whence);
+size_t device_tell_empty();
 
 #endif

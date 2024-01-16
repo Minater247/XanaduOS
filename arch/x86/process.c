@@ -192,7 +192,7 @@ void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
 
 
 process_t *process_load_elf(char *path) {
-	file_descriptor_t *fd = fopen(path, 0);
+	file_descriptor_t *fd = fopen(path, "r");
 	if (fd->flags & FILE_NOTFOUND_FLAG || !(fd->flags & FILE_ISOPEN_FLAG))
 	{
 		terminal_printf("Could not locate %s!\n", path);

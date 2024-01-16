@@ -8,7 +8,7 @@
 #include "inc_c/memory.h"
 
 typedef struct process {
-    uint32_t pid;
+    int pid;
     volatile uint32_t status;
     uint32_t stack_pos;
     uint32_t stack_size;

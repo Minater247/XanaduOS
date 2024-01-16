@@ -36,9 +36,9 @@ void kernel_main() {
 
 	boot_initialize();
 
-	fopen("/dev/kbd0", 0); // stdin
-	fopen("/dev/trm", 0); // stdout
-	fopen("/dev/trm", 0); // stderr
+	fopen("/dev/kbd0", "r"); // stdin
+	fopen("/dev/trm", "r+"); // stdout
+	fopen("/dev/trm", "r+"); // stderr
 
 	process_t *new_process = process_load_elf("/mnt/ramdisk/bin/hello.elf");
 	terminal_printf("Loaded ELF with PID %d\n", new_process->pid);

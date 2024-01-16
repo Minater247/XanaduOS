@@ -16,8 +16,8 @@ ramdisk_size_t *ramdisk;
 filesystem_t ramdisk_fs = {0};
 int ramdisk_fs_registered = 0;
 
-ramdisk_file_t *ropen(char *path, uint32_t flags) {
-    if (flags & FILE_MODE_WRITE || flags & FILE_MODE_APPEND) {
+ramdisk_file_t *ropen(char *path, char *flags) {
+    if (flags[1] == '+' || flags[0] != 'r') {
         //we don't support writing to the ramdisk
         ramdisk_file_t *file = (ramdisk_file_t*)kmalloc(sizeof(ramdisk_file_t));
         file->flags = FILE_NOTFOUND_FLAG;
@@ -84,9 +84,7 @@ ramdisk_file_t *ropen(char *path, uint32_t flags) {
     return file;
 }
 
-ramdisk_dir_t *ropendir(char *path, uint32_t flags) {
-    UNUSED(flags);
-
+ramdisk_dir_t *ropendir(char *path) {
     uint8_t item = 0;
     char path_item[64];
     uint32_t path_length = get_path_length(path) - 1;
@@ -156,7 +154,7 @@ ramdisk_dir_t *ropendir(char *path, uint32_t flags) {
     return dir;
 }
 
-int rread(void *ptr, uint32_t size, uint32_t nmemb, ramdisk_file_t *file) {
+int rread(void *ptr, size_t size, size_t nmemb, ramdisk_file_t *file) {
     if (!(file->flags & FILE_ISOPEN_FLAG)) {
         return -1;
     };
@@ -166,7 +164,7 @@ int rread(void *ptr, uint32_t size, uint32_t nmemb, ramdisk_file_t *file) {
     if (!(file->mode & FILE_MODE_READ)) {
         return -1;
     }
-    uint32_t bytes_to_read = size * nmemb;
+    size_t bytes_to_read = size * nmemb;
     if (file->seek_pos + bytes_to_read > file->length) {
         bytes_to_read = file->length - file->seek_pos;
     }
@@ -207,7 +205,7 @@ simple_return_t rreaddir(ramdisk_dir_t *dir) {
     return ret;
 }
 
-int rseek(ramdisk_file_t *file, uint32_t offset, uint8_t whence) {
+int rseek(ramdisk_file_t *file, size_t offset, int whence) {
     if (!(file->flags & FILE_ISOPEN_FLAG)) {
         return -1;
     }
@@ -233,7 +231,7 @@ int rseek(ramdisk_file_t *file, uint32_t offset, uint8_t whence) {
     return 0;
 }
 
-int rtell(ramdisk_file_t *file) {
+size_t rtell(ramdisk_file_t *file) {
     if (!(file->flags & FILE_ISOPEN_FLAG)) {
         return -1;
     }
@@ -323,13 +321,13 @@ void ramdisk_initialize(multiboot_info_t *mboot_info) {
     ramdisk = (ramdisk_size_t*)(ramdisk_addr_multiboot + 0xC0000000);
 
     ramdisk_fs.identifier = FILESYSTEM_TYPE_RAMDISK;
-    ramdisk_fs.open = (void*(*)(char*, uint32_t))ropen;
-    ramdisk_fs.read = (int(*)(char*, uint32_t, uint32_t, void*))rread;
+    ramdisk_fs.open = (void*(*)(char*, char*))ropen;
+    ramdisk_fs.read = (int(*)(char*, size_t, size_t, void*))rread;
     ramdisk_fs.write = NULL;
-    ramdisk_fs.seek = (int(*)(void*, uint32_t, uint8_t))rseek;
-    ramdisk_fs.tell = (int(*)(void*))rtell;
+    ramdisk_fs.seek = (int(*)(void*, size_t, int))rseek;
+    ramdisk_fs.tell = (size_t(*)(void*))rtell;
     ramdisk_fs.close = (int(*)(void*))rclose;
-    ramdisk_fs.opendir = (void*(*)(char*, uint32_t))ropendir;
+    ramdisk_fs.opendir = (void*(*)(char*))ropendir;
     ramdisk_fs.readdir = (simple_return_t(*)(void*))rreaddir;
     ramdisk_fs.closedir = (int(*)(void*))rclosedir;
     ramdisk_fs.stat = rstat;

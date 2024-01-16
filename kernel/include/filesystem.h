@@ -60,13 +60,13 @@ typedef struct {
 
 typedef struct {
     uint32_t identifier; //SHOULD NOT BE SET TO ANYTHING MEANINGFUL BY CALLER, SET BY REGISTER_FILESYSTEM
-    void *(*open)(char *path, uint32_t flags);
-    int (*read)(char *buf, uint32_t size, uint32_t count, void *file); //all void *file parameters are actually the filesystem's internal representation of a file
-    int (*write)(char *buf, uint32_t size, uint32_t count, void *file);
-    int (*seek)(void *file, uint32_t offset, uint8_t whence);
-    int (*tell)(void *file);
+    void *(*open)(char *path, char *flags);
+    int (*read)(char *buf, size_t size, size_t count, void *file); //all void *file parameters are actually the filesystem's internal representation of a file
+    int (*write)(char *buf, size_t size, size_t count, void *file);
+    int (*seek)(void *file, size_t offset, int whence);
+    size_t (*tell)(void *file);
     int (*close)(void *file);
-    void *(*opendir)(char *path, uint32_t flags);
+    void *(*opendir)(char *path);
     int (*stat)(void *file, stat_t *statbuf);
     simple_return_t (*readdir)(void *dir);
     int (*closedir)(void *dir);
@@ -104,15 +104,15 @@ void get_path_item(char *path, char *retbuf, uint8_t item);
 uint32_t get_path_length(char *path);
 int register_filesystem(filesystem_t *to_register);
 int mount_filesystem(uint32_t filesystem_id, char *path);
-file_descriptor_t *fopen(char *path, uint32_t flags);
-int fread(char *buf, uint32_t size, uint32_t count, file_descriptor_t *fd);
-int fwrite(char *buf, uint32_t size, uint32_t count, file_descriptor_t *fd);
+file_descriptor_t *fopen(char *path, char *flags);
+int fread(char *buf, size_t size, size_t count, file_descriptor_t *fd);
+int fwrite(char *buf, size_t size, size_t count, file_descriptor_t *fd);
 int fclose(file_descriptor_t *fd);
-dir_descriptor_t *fopendir(char *path, uint32_t flags);
+dir_descriptor_t *fopendir(char *path);
 simple_return_t freaddir(dir_descriptor_t *dd);
 int fclosedir(dir_descriptor_t *dd);
-int fseek(file_descriptor_t *fd, uint32_t offset, uint8_t whence);
-int ftell(file_descriptor_t *fd);
+int fseek(file_descriptor_t *fd, size_t offset, int whence);
+size_t ftell(file_descriptor_t *fd);
 int fstat(file_descriptor_t *fd, stat_t *statbuf);
 file_descriptor_t *copy_descriptor(file_descriptor_t *fd, uint32_t id);
 

@@ -16,7 +16,7 @@ int device_fs_registered = 0;
 
 device_t *device_head = NULL;
 
-device_file_t *dopen(char *path, uint32_t flags) {
+device_file_t *dopen(char *path, char *flags) {
     //Skip the leading slashes, if any
     while (*path == '/') {
         path++;
@@ -42,14 +42,24 @@ device_file_t *dopen(char *path, uint32_t flags) {
             ret->flags = FILE_ISFILE_FLAG | FILE_ISOPEN_FLAG;
             ret->device = current_device;
 
-            if (flags == 'r') {
+            if (flags[0] == 'r') {
                 ret->mode = FILE_MODE_READ;
-            } else if (flags == 'w') {
+            } else if (flags[0] == 'w') {
                 ret->mode = FILE_MODE_WRITE;
-            } else if (flags == 'a') {
+            } else if (flags[0] == 'a') {
                 ret->mode = FILE_MODE_APPEND;
             } else {
                 ret->mode = FILE_MODE_READ | FILE_MODE_WRITE;
+            }
+
+            if (flags[1] == '+') {
+                if (flags[0] == 'r') {
+                    ret->mode = FILE_MODE_WRITE;
+                } else if (flags[0] == 'w') {
+                    ret->mode = FILE_MODE_READ;
+                } else if (flags[0] == 'a') {
+                    ret->mode = FILE_MODE_READ;
+                }
             }
 
             return ret;
@@ -63,10 +73,8 @@ device_file_t *dopen(char *path, uint32_t flags) {
     return ret;
 }
 
-device_dir_t *dopendir(char *path, uint32_t flags) {
-    UNUSED(flags);
-    UNUSED(path); //we don't use the path for anything, but we need to take it as an argument to match the function pointer type
-
+device_dir_t *dopendir(char *path) {
+    UNUSED(path);
     //allocate a device_dir_t and return it
     device_dir_t *ret = (device_dir_t *)kmalloc(sizeof(device_dir_t));
     ret->flags = FILE_ISOPENDIR_FLAG | FILE_ISDIR_FLAG;
@@ -74,7 +82,7 @@ device_dir_t *dopendir(char *path, uint32_t flags) {
     return ret;
 }
 
-int dread(void *ptr, uint32_t size, uint32_t nmemb, device_file_t *file) {
+int dread(void *ptr, size_t size, size_t nmemb, device_file_t *file) {
     if (!(file->flags & FILE_ISOPEN_FLAG)) {
         return -1;
     }
@@ -87,7 +95,7 @@ int dread(void *ptr, uint32_t size, uint32_t nmemb, device_file_t *file) {
     return file->device->read(ptr, size * nmemb);
 }
 
-int dwrite(void *ptr, uint32_t size, uint32_t nmemb, device_file_t *file) {
+int dwrite(void *ptr, size_t size, size_t nmemb, device_file_t *file) {
     if (!(file->flags & FILE_ISOPEN_FLAG)) {
         return -1;
     }
@@ -113,7 +121,7 @@ simple_return_t dreaddir(device_dir_t *dir) {
     return (simple_return_t){0, current_device->name};
 }
 
-int dseek(device_file_t *file, uint32_t offset, uint8_t whence) {
+int dseek(device_file_t *file, size_t offset, int whence) {
     if (!(file->flags & FILE_ISOPEN_FLAG)) {
         return -1;
     }
@@ -123,7 +131,7 @@ int dseek(device_file_t *file, uint32_t offset, uint8_t whence) {
     return file->device->seek(offset, whence);
 }
 
-int dtell(device_file_t *file) {
+size_t dtell(device_file_t *file) {
     if (!(file->flags & FILE_ISOPEN_FLAG)) {
         return -1;
     }
@@ -149,19 +157,19 @@ int dclosedir(device_dir_t *dir) {
     return 0;
 }
 
-int device_rw_empty(void *ptr, uint32_t size) {
+int device_rw_empty(void *ptr, size_t size) {
     UNUSED(ptr);
     UNUSED(size);
     return 0;
 }
 
-int device_seek_empty(uint32_t offset, uint8_t whence) {
+int device_seek_empty(size_t offset, int whence) {
     UNUSED(offset);
     UNUSED(whence);
     return 0;
 }
 
-int device_tell_empty() {
+size_t device_tell_empty() {
     return 0;
 }
 
@@ -242,13 +250,13 @@ int dstat(void *file_in, stat_t *statbuf) {
 
 void devices_initialize() {
     device_fs.identifier = FILESYSTEM_TYPE_DEVICES;
-    device_fs.open = (void*(*)(char*, uint32_t))dopen;
-    device_fs.read = (int(*)(char*, uint32_t, uint32_t, void*))dread;
-    device_fs.write = (int(*)(char*, uint32_t, uint32_t, void*))dwrite;
-    device_fs.seek = (int(*)(void*, uint32_t, uint8_t))dseek;
-    device_fs.tell = (int(*)(void*))dtell;
+    device_fs.open = (void*(*)(char*, char*))dopen;
+    device_fs.read = (int(*)(char*, size_t, size_t, void*))dread;
+    device_fs.write = (int(*)(char*, size_t, size_t, void*))dwrite;
+    device_fs.seek = (int(*)(void*, size_t, int))dseek;
+    device_fs.tell = (size_t(*)(void*))dtell;
     device_fs.close = (int(*)(void*))dclose;
-    device_fs.opendir = (void*(*)(char*, uint32_t))dopendir;
+    device_fs.opendir = (void*(*)(char*))dopendir;
     device_fs.readdir = (simple_return_t(*)(void*))dreaddir;
     device_fs.closedir = (int(*)(void*))dclosedir;
     device_fs.copy = dcopy;

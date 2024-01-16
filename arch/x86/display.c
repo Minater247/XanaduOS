@@ -627,12 +627,12 @@ void terminal_printf(const char *format, ...)
 
 uint32_t seek_pos = 0;
 
-int trm_dev_write(void *ptr, uint32_t size) {
+int trm_dev_write(void *ptr, size_t size) {
     terminal_write(ptr, size);
     return size;
 }
 
-int trm_dev_seek(uint32_t offset, uint8_t whence) {
+int trm_dev_seek(size_t offset, int whence) {
     switch (whence) {
         case SEEK_SET:
             seek_pos = offset;
@@ -647,11 +647,11 @@ int trm_dev_seek(uint32_t offset, uint8_t whence) {
     return 0;
 }
 
-int trm_dev_tell() {
+size_t trm_dev_tell() {
     return seek_pos;
 }
 
-int trm_dev_read(void *ptr, uint32_t size) {
+int trm_dev_read(void *ptr, size_t size) {
     //return the content at seek_pos within the VGA buffer
     uint8_t *buf = (uint8_t*)ptr;
     if (seek_pos + size > VGA_WIDTH * VGA_HEIGHT) {

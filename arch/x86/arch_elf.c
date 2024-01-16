@@ -88,7 +88,7 @@ elf_load_result_t elf_load_executable(void *elf_file) {
 
 
 elf_load_result_t elf_load_executable_path(char *path) {
-    file_descriptor_t *fd = fopen(path, 0);
+    file_descriptor_t *fd = fopen(path, "r");
     if (fd->flags & FILE_NOTFOUND_FLAG || !(fd->flags & FILE_ISOPEN_FLAG)) {
         return (elf_load_result_t){ELF_ERR_NOT_ELF_FILE, NULL, NULL};
     }
