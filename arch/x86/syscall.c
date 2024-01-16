@@ -8,7 +8,7 @@
 #include "inc_c/syscall.h"
 
 void syscall_handler(regs_t *regs) {
-    // serial_printf("Got syscall: 0x%x\n", regs->eax);
+    serial_printf("Syscall: 0x%x\n", regs->eax);
 
     file_descriptor_t *fd;
 
@@ -53,6 +53,8 @@ void syscall_handler(regs_t *regs) {
             serial_printf("Unknown syscall: 0x%x\n", regs->eax);
             break;
     };
+
+    serial_printf("Returning from syscall.\n");
 
     return;
 }

@@ -144,7 +144,7 @@ void memory_initialize(multiboot_info_t *mboot_info)
         memset(page_directory_bitmaps[entry.pd_entry]->bitmap, 0xFF, sizeof(page_directory_bitmaps[entry.pd_entry]->bitmap));
     }
 
-    kernel_pd.phys_addr = (uint32_t)&page_directory - 0xC0000000;
+    kernel_pd.phys_addr = (uint32_t)&kernel_pd - 0xC0000000;
 
     prealloc_table = (page_table_t *)kmalloc_ap(sizeof(page_table_t), &prealloc_phys);
     memset(prealloc_table->pt_entry, 0, sizeof(prealloc_table->pt_entry));
@@ -360,6 +360,7 @@ void heap_expand() {
 void heap_dump()
 {
     serial_printf("\n\nHeap dump:\n");
+    serial_printf("Address of first header's next field: 0x%x\n", &kheap->next);
     // for each header, print the header, the contents, and the next header
     for (heap_header_t *header = kheap; header != NULL; header = header->next)
     {
@@ -386,8 +387,10 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
         }
         return (void *)old_end;
     }
+    asm volatile ("cli");
     if (align)
     {
+        serial_printf("kmalloc_a(p) called!\n");
         heap_header_t *header;
         for (header = kheap; header != NULL; header = header->next)
         {
@@ -461,12 +464,17 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
                 }
 
                 // now we can return the aligned address
+                serial_printf("Returning 0x%x\n", aligned_addr);
+
+                asm volatile ("sti");
+
                 return (void *)aligned_addr;
             }
         }
     }
     else
     {
+        serial_printf("kmalloc(_p) (%d) called!\n", size);
         heap_header_t *header;
         for (header = kheap; header != NULL; header = header->next)
         {
@@ -474,9 +482,11 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
             {
                 // we found a header that's big enough
                 // now we need to split it if it's too big
+                serial_printf("Found a header @ 0x%x\n", header);
                 if (header->length > size + sizeof(heap_header_t))
                 {   
                     // split the header
+                    serial_printf("Splitting (post)\n");
                     heap_header_t *new_header = (heap_header_t *)((uint32_t)header + sizeof(heap_header_t) + size);
                     new_header->magic = HEAP_MAGIC;
                     new_header->length = header->length - size - sizeof(heap_header_t);
@@ -503,6 +513,10 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
                     *phys = (((page_table_t *)current_pd->virt[pd_entry])->pt_entry[pt_entry] & 0xFFFFF000) + ((uint32_t)header & 0xFFF);
                 }
 
+                serial_printf("Returning 0x%x\n", (uint32_t)header + sizeof(heap_header_t));
+
+                asm volatile ("sti");
+
                 // now we can return the header
                 return (void *)((uint32_t)header + sizeof(heap_header_t));
             }
@@ -525,37 +539,25 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
 void kfree(void *ptr)
 {
     kassert_msg(kheap != NULL, "kfree called before kheap initialization!");
+    asm volatile ("cli");
     heap_header_t *header = (heap_header_t *)((uint32_t)ptr - sizeof(heap_header_t));
     kassert_msg(header->magic == HEAP_MAGIC, "Invalid heap header magic number.");
     header->free = true;
     // now we need to merge this header with the next header if it's free
     if (header->next != NULL && header->next->free)
     {
-        // make sure the next header is directly after this one (may have memory holes)
-        if ((uint32_t)header + header->length + sizeof(heap_header_t) != (uint32_t)header->next)
+        serial_printf("Merging 0x%x (%d) with 0x%x (%d) to make 0x%x (%d)\n", header, header->length, header->next, header->next->length, header, header->length + header->next->length + sizeof(heap_header_t));
+        header->length += header->next->length + sizeof(heap_header_t);
+        header->next = header->next->next;
+        if (header->next != NULL)
         {
-            // we can't merge these headers
-            return;
-        }
-        else
-        {
-            header->length += header->next->length + sizeof(heap_header_t);
-            header->next = header->next->next;
-            if (header->next != NULL)
-            {
-                header->next->prev = header;
-            }
+            header->next->prev = header;
         }
     }
+
     // now we need to merge this header with the previous header if it's free
     if (header->prev != NULL && header->prev->free)
     {
-        // make sure the previous header is directly before this one (may have memory holes)
-        if ((uint32_t)header->prev + header->prev->length + sizeof(heap_header_t) != (uint32_t)header)
-        {
-            // we can't merge these headers
-            return;
-        }
         header->prev->length += header->length + sizeof(heap_header_t);
         header->prev->next = header->next;
         if (header->next != NULL)
@@ -563,6 +565,8 @@ void kfree(void *ptr)
             header->next->prev = header->prev;
         }
     }
+
+    asm volatile ("sti");
 }
 
 void *kmalloc_a(uint32_t size)

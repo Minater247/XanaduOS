@@ -83,18 +83,12 @@ elf_load_result_t elf_load_executable(void *elf_file) {
                 terminal_printf("ELF: Allocated page 0x%x -> 0x%x\n", aligned_vaddr + (i * 0x1000), (first_free.pd_entry * 0x400000) + (first_free.pt_entry * 0x1000));
             }
 
-            terminal_printf("PD[0] = 0x%x\n", current_pd->entries[0]);
-            terminal_printf("Entries addr phys = 0x%x\n", &current_pd->entries);
-            terminal_printf("PD[0][0] = 0x%x\n", ((page_table_t *)current_pd->virt[0])[0].pt_entry[0]);
-            uint32_t cr3;
-            asm volatile ("mov %%cr3, %0" : "=r"(cr3));
-            terminal_printf("CR3 = 0x%x against pd addr 0x%x\n", cr3, current_pd->phys_addr);
-            while (true);
-
             //copy the section into memory
             memcpy((void *)program_header->p_vaddr, (void *)((uint32_t)elf_file + program_header->p_offset), program_header->p_filesz);
             //fill the rest of the section with zeroes
-            memset((void *)(program_header->p_vaddr + program_header->p_filesz), 0, program_header->p_memsz - program_header->p_filesz);
+            if (program_header->p_memsz > program_header->p_filesz) {
+                memset((void *)(program_header->p_vaddr + program_header->p_filesz), 0, program_header->p_memsz - program_header->p_filesz);
+            }
         } else {
             // serial_printf("ELF: Unhandled program header type %d\n", program_header->p_type);
             asm volatile ("sti");

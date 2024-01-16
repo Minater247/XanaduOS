@@ -11,15 +11,6 @@ irq0:
     pushl %ebp
     call timer_interrupt_handler
 
-.globl init_program_and_jump
-init_program_and_jump:
-    movl 8(%esp), %ebx
-    movl 4(%esp), %eax
-    movl %eax, %esp
-    movl %esp, %ebp
-    sti
-    jmp *%ebx
-
 .globl jump_to_program
 jump_to_program:
     movl 8(%esp), %ebx

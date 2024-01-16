@@ -224,6 +224,7 @@ file_descriptor_t *fopen(char *path, uint32_t flags) {
     ret->flags = *(uint32_t*)ret->fs_data;
     ret->id = next_file_id();
     current_process->fds[ret->id] = ret;
+
     return ret;
 }
 

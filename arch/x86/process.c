@@ -11,15 +11,6 @@
 #include "../../kernel/include/errors.h"
 #include "inc_c/io.h"
 
-// typedef struct process {
-//     uint32_t pid;
-//     regs_t regs;
-//     file_descriptor_t *fds[256];
-//     uint32_t num_fds;
-//     uint32_t max_fds;
-//     struct process *next;
-// } process_t;
-
 process_t *head_process = NULL;
 process_t *current_process = NULL;
 uint32_t next_pid = 0;
@@ -65,8 +56,22 @@ void process_initialize()
     terminal_printf("Address of head process' next field: 0x%x\n", &head_process->next);
 }
 
-process_t *create_task(void *entry_point, void *stack) {
+void task_return() {
+    terminal_printf("Task returned!");
+
+    //get the return code from process stack
+    uint32_t return_code = *((uint32_t *)(current_process->esp - 2*sizeof(uint32_t)));
+    terminal_printf("Return code: 0x%x\n", return_code);
+
+    while (true);
+}
+
+process_t *create_task(void *entry_point, uint32_t stack_size) {
     process_t *new_process = (process_t *)kmalloc(sizeof(process_t));
+
+    asm volatile ("cli");
+
+    uint32_t stack = (uint32_t)kmalloc(stack_size) + stack_size;
 
     new_process->pid = next_pid++;
     new_process->next = NULL;
@@ -92,11 +97,16 @@ process_t *create_task(void *entry_point, void *stack) {
 
     new_process->entry = (uint32_t)entry_point;
 
+    //add the return context to the stack
+    new_process->esp -= sizeof(uint32_t);
+    *((uint32_t *)new_process->esp) = (uint32_t)&task_return;
+
+    asm volatile ("sti");
+
     return new_process;
 }
 
 extern void jump_to_program(uint32_t esp, uint32_t ebp);
-extern void init_program_and_jump(uint32_t esp, uint32_t entry_point);
 
 void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
 {
@@ -133,7 +143,16 @@ void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
 	{
 		new_process->status = TASK_STATUS_RUNNING;
         // First time running, so set up stack and jump to entry point
-		init_program_and_jump(new_process->esp, new_process->entry);
+
+        asm volatile ("mov %0, %%esp" : : "r" (new_process->esp));
+        asm volatile ("mov %0, %%ebp" : : "r" (new_process->ebp));
+        asm volatile ("sti");
+        //set the function up as an function returning an int
+        int (*entry_ptr)(void) = (int (*)(void))new_process->entry;
+        //call the function
+        int return_code = entry_ptr();
+        terminal_printf("Process %d returned with code 0x%x\n", new_process->pid, return_code);
+        while (true);
 	}
 
     // Otherwise, we're already running, so just restore context and return
@@ -144,10 +163,10 @@ void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
 
 
 int process_load_elf(char *path) {
-	file_descriptor_t *fd = fopen("/mnt/ramdisk/bin/hello.elf", 0);
+	file_descriptor_t *fd = fopen(path, 0);
 	if (fd->flags & FILE_NOTFOUND_FLAG || !(fd->flags & FILE_ISOPEN_FLAG))
 	{
-		terminal_printf("Could not locate hello.elf!\n");
+		terminal_printf("Could not locate %s!\n", path);
 		while (true);
 	}
 
@@ -155,31 +174,32 @@ int process_load_elf(char *path) {
 	int stat_ret = fstat(fd, &stat);
 	if (stat_ret != 0)
 	{
-		terminal_printf("Could not stat hello.elf!\n");
+		terminal_printf("Could not stat %s!\n", path);
 		while (true);
 	}
 	int size = stat.st_size;
 
-	terminal_printf("Size of hello.elf: %d\n", size);
+	terminal_printf("Size of %s: %d\n", path, size);
 	char *elfbuf = kmalloc(size);
 	int read = fread(elfbuf, 1, size, fd);
 	if (read != size)
 	{
-		terminal_printf("Could not read hello.elf!\n");
+		terminal_printf("Could not read %s!\n", path);
 		while (true);
 	}
-	terminal_printf("Read %d bytes from hello.elf\n", read);
+	terminal_printf("Read %d bytes from %s\n", read, path);
 
 	fclose(fd);
 	
 	elf_load_result_t loaded = elf_load_executable(elfbuf);
 	if (loaded.code != 0)
 	{
-		terminal_printf("Could not load hello.elf! Error code: %d\n", loaded.code);
+		terminal_printf("Could not load %s! Error code: %d\n", path, loaded.code);
 		while (true);
 	}
 	kfree(elfbuf);
 
-    process_t *new_process = create_task((void *)loaded.entry_point, kmalloc(4096));
+    process_t *new_process = create_task((void *)loaded.entry_point, 0x1000);
+    
     return new_process->pid;
 }
