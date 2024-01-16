@@ -42,6 +42,10 @@ elf_load_result_t elf_load_executable(void *elf_file) {
         return (elf_load_result_t){ELF_ERR_NOT_EXECUTABLE, NULL, NULL}; //not an executable ELF file
     }
 
+    page_directory_t *old_pd = current_pd;
+    page_directory_t *new_pd = clone_page_directory(current_pd);
+    switch_page_directory(new_pd);
+
     //Attempt to load sections
     for (int i = 0; i < elf_header->e_phnum; i++) {
         ELF32_PHDR *program_header = (ELF32_PHDR *)((uint32_t)elf_file + elf_header->e_phoff + (i * elf_header->e_phentsize));
@@ -62,7 +66,7 @@ elf_load_result_t elf_load_executable(void *elf_file) {
             bool is_writable = program_header->p_flags & PF_W;
             for (uint32_t i = 0; i < num_pages; i++) {
                 page_table_entry_t first_free = first_free_page();
-                alloc_page(aligned_vaddr + (i * 0x1000), (first_free.pd_entry * 0x400000) + (first_free.pt_entry * 0x1000), true, true, is_writable);
+                alloc_page_kmalloc(aligned_vaddr + (i * 0x1000), (first_free.pd_entry * 0x400000) + (first_free.pt_entry * 0x1000), true, true, is_writable);
             }
 
             //copy the section into memory
@@ -77,9 +81,9 @@ elf_load_result_t elf_load_executable(void *elf_file) {
         }
     }
 
+    switch_page_directory(old_pd);
 
-        asm volatile ("sti");
-        return (elf_load_result_t){ELF_ERR_NONE, (void *)elf_header->e_entry, current_pd};
+    return (elf_load_result_t){ELF_ERR_NONE, (void *)elf_header->e_entry, new_pd};
 }
 
 

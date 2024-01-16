@@ -240,7 +240,6 @@ page_directory_t *clone_page_directory(page_directory_t *directory) {
 
     for (uint32_t pde = 0; pde < 1024; pde++) {
         if (directory->entries[pde] & 0x1) {
-
             new_directory->virt[pde] = (uint32_t)kmalloc_ap(sizeof(page_table_t), &phys);
             new_directory->entries[pde] = phys | 0x3;
             new_directory->is_full[pde] = directory->is_full[pde];
@@ -268,18 +267,23 @@ page_directory_t *clone_page_directory(page_directory_t *directory) {
 }
 
 void free_page_directory(page_directory_t *directory) {
-    //if the directory entry is the same as the kernel, leave it be
-    //otherwise, free it
+    //if the pte is the same as the kernel, don't free it
     for (uint32_t pde = 0; pde < 1024; pde++) {
         if (directory->entries[pde] & 0x1) {
-            uint32_t kernel_entry = ((page_table_t *)kernel_pd.virt[pde])->pt_entry[0] & 0xFFFFF000;
-            uint32_t this_entry = ((page_table_t *)directory->virt[pde])->pt_entry[0] & 0xFFFFF000;
-            if (kernel_entry != this_entry) {
-                //free the page table
-                //note the use of kfree_a - this is because the page table allocation header is not necessarily at the start of the allocation.
-                //kmalloc_a's header is 0x0-0xFFF bytes before the pointer, so we need to use kfree_a to free it.
-                kfree_a((void *)directory->virt[pde]);
+            for (uint32_t pte = 0; pte < 1024; pte++) {
+                if (((page_table_t *)directory->virt[pde])->pt_entry[pte] & 0x1) {
+                    if (kernel_pd.virt[pde] & 0x1) {
+                        if (((page_table_t *)directory->virt[pde])->pt_entry[pte] == ((page_table_t *)kernel_pd.virt[pde])->pt_entry[pte]) {
+                            continue;
+                        }
+                    }
+                    uint32_t phys = ((page_table_t *)directory->virt[pde])->pt_entry[pte] & 0xFFFFF000;
+                    uint32_t pd_entry = phys >> 22;
+                    uint32_t pt_entry = (phys >> 12) & 0x3FF;
+                    page_directory_bitmaps[pd_entry]->bitmap[pt_entry / 32] &= ~(1 << (pt_entry % 32));
+                }
             }
+            kfree_a((void *)directory->virt[pde]);
         }
     }
     //free the directory
@@ -331,6 +335,54 @@ void alloc_page(uint32_t virt, uint32_t phys, bool make, bool is_kernel, bool is
         page_directory_bitmaps[phys_pd_entry] = prealloc_bitmap;
         current_pd->is_full[phys_pd_entry] = false;
         prealloc_bitmap = NULL;
+    }
+
+    //set the bitmap
+    page_directory_bitmaps[phys_pd_entry]->bitmap[phys_pt_entry / 32] |= (1 << (phys_pt_entry % 32));
+
+    //check if the page directory entry is full
+    for (uint32_t i = 0; i < 32; i++) {
+        if (page_directory_bitmaps[phys_pd_entry]->bitmap[i] != 0xFFFFFFFF) {
+            return;
+        }
+    }
+    //the page directory entry is full
+    current_pd->is_full[phys_pd_entry] = true;
+    return;
+}
+
+void alloc_page_kmalloc(uint32_t virt, uint32_t phys, bool make, bool is_kernel, bool is_writeable) {
+    //get the page directory entry
+    uint32_t pd_entry = virt >> 22;
+    uint32_t pt_entry = (virt >> 12) & 0x3FF;
+
+    phys &= 0xFFFFF000; //make sure the physical address is page-aligned
+
+    //check if the page is already in use
+    if (current_pd->virt[pd_entry] == 0 && make) {
+        uint32_t phys;
+        current_pd->virt[pd_entry] = (uint32_t)kmalloc_ap(0x1000, &phys);
+        current_pd->entries[pd_entry] = phys | 0x1;
+        if (!is_kernel) {
+            current_pd->entries[pd_entry] |= 0x4;
+        }
+        if (is_writeable) {
+            current_pd->entries[pd_entry] |= 0x2;
+        }
+        current_pd->is_full[pd_entry] = false;
+    }
+    if ((*(page_table_t *)(current_pd->virt[pd_entry])).pt_entry[pt_entry] & 0x1) {
+        kpanic("Attempted to allocate already allocated page!");
+    }
+
+    //set the page table entry
+    ((page_table_t *)(current_pd->virt[pd_entry]))->pt_entry[pt_entry] = phys | 0x3;
+
+    uint32_t phys_pd_entry = phys >> 22;
+    uint32_t phys_pt_entry = (phys >> 12) & 0x3FF;
+    if (page_directory_bitmaps[phys_pd_entry] == NULL) {
+        page_directory_bitmaps[phys_pd_entry] = kmalloc(sizeof(bitmap_1024_t));
+        current_pd->is_full[phys_pd_entry] = false;
     }
 
     //set the bitmap
@@ -406,7 +458,6 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
         }
         return (void *)old_end;
     }
-    asm volatile ("cli");
     if (align)
     {
         heap_header_t *header;
@@ -481,8 +532,6 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
                     *phys = ((page_table_t *)current_pd->virt[pd_entry])->pt_entry[pt_entry] & 0xFFFFF000;
                 }
 
-                asm volatile ("sti");
-
                 return (void *)aligned_addr;
             }
         }
@@ -525,8 +574,6 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
                     *phys = (((page_table_t *)current_pd->virt[pd_entry])->pt_entry[pt_entry] & 0xFFFFF000) + ((uint32_t)header & 0xFFF);
                 }
 
-                asm volatile ("sti");
-
                 // now we can return the header
                 return (void *)((uint32_t)header + sizeof(heap_header_t));
             }
@@ -549,7 +596,6 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
 void kfree_int(void *ptr, bool unaligned)
 {
     kassert_msg(kheap != NULL, "kfree called before kheap initialization!");
-    asm volatile ("cli");
     heap_header_t *header = (heap_header_t *)((uint32_t)ptr - sizeof(heap_header_t));
     if (!unaligned) {
         kassert_msg(header->magic == HEAP_MAGIC, "Invalid heap header magic number.");
@@ -557,6 +603,9 @@ void kfree_int(void *ptr, bool unaligned)
         //the header may be up to 0xFFF bytes before the pointer
         while (header->magic != HEAP_MAGIC) {
             header = (heap_header_t *)((uint32_t)header - 1);
+        }
+        if ((uint32_t)ptr - (uint32_t)header > 0xFFF) {
+            kpanic("Header too far away!");
         }
     }
     header->free = true;
@@ -581,8 +630,6 @@ void kfree_int(void *ptr, bool unaligned)
             header->next->prev = header->prev;
         }
     }
-
-    asm volatile ("sti");
 }
 
 void kfree(void *ptr)

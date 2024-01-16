@@ -54,7 +54,7 @@ void process_initialize()
     current_process = head_process;
 }
 
-process_t *create_task(void *entry_point, uint32_t stack_size) {
+process_t *create_task(void *entry_point, uint32_t stack_size, page_directory_t *pd) {
     process_t *new_process = (process_t *)kmalloc(sizeof(process_t));
 
     asm volatile ("cli");
@@ -65,7 +65,7 @@ process_t *create_task(void *entry_point, uint32_t stack_size) {
     new_process->next = NULL;
     new_process->num_fds = 0;
     new_process->max_fds = 256;
-    new_process->pd = clone_page_directory(current_pd);
+    new_process->pd = pd;
     new_process->status = TASK_STATUS_INITIALIZED;
     new_process->esp = (uint32_t)stack;
     new_process->ebp = (uint32_t)stack;
@@ -87,8 +87,6 @@ process_t *create_task(void *entry_point, uint32_t stack_size) {
 
     new_process->entry_or_return = (uint32_t)entry_point;
 
-    asm volatile ("sti");
-
     return new_process;
 }
 
@@ -109,12 +107,16 @@ void free_process(process_t *process) {
     //free the stack
     kfree((void *)(process->stack_pos - process->stack_size));
 
-    //free the page directory
-    free_page_directory(process->pd);
+    switch_page_directory(&kernel_pd);
 
     process->status = TASK_STATUS_FINISHED;
 
     //We leave it up to the creator of the process to free the process struct itself
+
+    asm volatile ("sti");
+
+    //free the page directory
+    free_page_directory(process->pd);
 
     while (true);
 }
@@ -226,7 +228,10 @@ process_t *process_load_elf(char *path) {
 	}
 	kfree(elfbuf);
 
-    process_t *new_process = create_task((void *)loaded.entry_point, 0x1000);
+
+    process_t *new_process = create_task((void *)loaded.entry_point, 0x1000, loaded.pd);
+
+    asm volatile ("sti");
     
     return new_process;
 }
