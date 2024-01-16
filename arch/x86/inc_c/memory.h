@@ -49,10 +49,12 @@ void *kmalloc_a(uint32_t size);
 void *kmalloc_p(uint32_t size, uint32_t *phys);
 void *kmalloc_ap(uint32_t size, uint32_t *phys);
 void kfree(void *ptr);
+void kfree_a(void *ptr);
 void heap_dump();
 page_table_entry_t first_free_page();
 void alloc_page(uint32_t virt, uint32_t phys, bool make, bool is_kernel, bool is_writeable);
 page_directory_t *clone_page_directory(page_directory_t *directory);
 void switch_page_directory(page_directory_t *directory);
+void free_page_directory(page_directory_t *directory);
 
 #endif

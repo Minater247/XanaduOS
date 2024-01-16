@@ -1,101 +1,6 @@
-kmalloc(_p) (8) called!
-Found a header @ 0xC021B080
-Splitting (post)
-Returning 0xC021B091
-kmalloc(_p) (12) called!
-Found a header @ 0xC021B099
-Splitting (post)
-Returning 0xC021B0AA
-kmalloc(_p) (16) called!
-Found a header @ 0xC021B0B6
-Splitting (post)
-Returning 0xC021B0C7
-kmalloc(_p) (12) called!
-Found a header @ 0xC021B0D7
-Splitting (post)
-Returning 0xC021B0E8
-kmalloc(_p) (16) called!
-Found a header @ 0xC021B0F4
-Splitting (post)
-Returning 0xC021B105
-kmalloc(_p) (12) called!
-Found a header @ 0xC021B115
-Splitting (post)
-Returning 0xC021B126
-kmalloc(_p) (16) called!
-Found a header @ 0xC021B132
-Splitting (post)
-Returning 0xC021B143
-kmalloc(_p) (12) called!
-Found a header @ 0xC021B153
-Splitting (post)
-Returning 0xC021B164
-kmalloc(_p) (16) called!
-Found a header @ 0xC021B170
-Splitting (post)
-Returning 0xC021B181
-kmalloc(_p) (20) called!
-Found a header @ 0xC021B191
-Splitting (post)
-Returning 0xC021B1A2
-kmalloc(_p) (5088) called!
-Found a header @ 0xC021B1B6
-Splitting (post)
-Returning 0xC021B1C7
-Merging 0xC021B1B6 (5088) with 0xC021C5A7 (6175304) to make 0xC021B1B6 (6180409)
-kmalloc(_p) (1060) called!
-Found a header @ 0xC021B191
-Splitting (post)
-Returning 0xC021B1A2
-kmalloc(_p) (4096) called!
-Found a header @ 0xC021B5C6
-Splitting (post)
-Returning 0xC021B5D7
-kmalloc_a(p) called!
-Returning 0xC021D000
-kmalloc_a(p) called!
-Returning 0xC0220000
-kmalloc_a(p) called!
-Returning 0xC0222000
-kmalloc_a(p) called!
-Returning 0xC0224000
-kmalloc_a(p) called!
-Returning 0xC0226000
-kmalloc(_p) (16) called!
-Found a header @ 0xC021C5D7
-Splitting (post)
-Returning 0xC021C5E8
-kmalloc(_p) (12) called!
-Found a header @ 0xC021C5F8
-Splitting (post)
-Returning 0xC021C609
-kmalloc(_p) (16) called!
-Found a header @ 0xC021C615
-Splitting (post)
-Returning 0xC021C626
-kmalloc(_p) (12) called!
-Found a header @ 0xC021C636
-Splitting (post)
-Returning 0xC021C647
-kmalloc(_p) (16) called!
-Found a header @ 0xC021C653
-Splitting (post)
-Returning 0xC021C664
-kmalloc(_p) (12) called!
-Found a header @ 0xC021C674
-Splitting (post)
-Returning 0xC021C685
 Syscall: 0x1
 Returning from syscall.
 Syscall: 0x2
-kmalloc(_p) (16) called!
-Found a header @ 0xC021C691
-Splitting (post)
-Returning 0xC021C6A2
-kmalloc(_p) (20) called!
-Found a header @ 0xC021C6B2
-Splitting (post)
-Returning 0xC021C6C3
 Returning from syscall.
 Syscall: 0x0
 Returning from syscall.
@@ -156,7 +61,6 @@ Returning from syscall.
 Syscall: 0x0
 Returning from syscall.
 Syscall: 0x3
-Merging 0xC021C6B2 (20) with 0xC021C6D7 (2311) to make 0xC021C6B2 (2348)
 Returning from syscall.
 Syscall: 0x1
 Returning from syscall.

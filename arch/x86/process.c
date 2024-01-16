@@ -30,7 +30,7 @@ void serial_dump_process() {
         serial_printf("  PID: 0x%x\n", current_process->pid);
         serial_printf("  ESP: 0x%x\n", current_process->esp);
         serial_printf("  EBP: 0x%x\n", current_process->ebp);
-        serial_printf("  Entry: 0x%x\n", current_process->entry);
+        serial_printf("  Entry: 0x%x\n", current_process->entry_or_return);
         serial_printf("  Next: 0x%x\n", current_process->next);
         serial_printf("  PD: 0x%x\n", current_process->pd);
         serial_printf("  Status: 0x%x\n", current_process->status);
@@ -52,18 +52,6 @@ void process_initialize()
     head_process->status = TASK_STATUS_RUNNING;
     memset(head_process->fds, 0, sizeof(head_process->fds));
     current_process = head_process;
-
-    terminal_printf("Address of head process' next field: 0x%x\n", &head_process->next);
-}
-
-void task_return() {
-    terminal_printf("Task returned!");
-
-    //get the return code from process stack
-    uint32_t return_code = *((uint32_t *)(current_process->esp - 2*sizeof(uint32_t)));
-    terminal_printf("Return code: 0x%x\n", return_code);
-
-    while (true);
 }
 
 process_t *create_task(void *entry_point, uint32_t stack_size) {
@@ -81,6 +69,8 @@ process_t *create_task(void *entry_point, uint32_t stack_size) {
     new_process->status = TASK_STATUS_INITIALIZED;
     new_process->esp = (uint32_t)stack;
     new_process->ebp = (uint32_t)stack;
+    new_process->stack_pos = stack;
+    new_process->stack_size = stack_size;
     memset(new_process->fds, 0, sizeof(new_process->fds));
     for (int i = 0; i < 256; i++) {
         if (current_process->fds[i] != NULL) {
@@ -95,15 +85,49 @@ process_t *create_task(void *entry_point, uint32_t stack_size) {
     }
     current_process->next = new_process;
 
-    new_process->entry = (uint32_t)entry_point;
-
-    //add the return context to the stack
-    new_process->esp -= sizeof(uint32_t);
-    *((uint32_t *)new_process->esp) = (uint32_t)&task_return;
+    new_process->entry_or_return = (uint32_t)entry_point;
 
     asm volatile ("sti");
 
     return new_process;
+}
+
+void free_process(process_t *process) {
+    process_t *current_process = head_process;
+    while (current_process->next != process) {
+        current_process = current_process->next;
+    }
+    current_process->next = process->next;
+
+    //close all file descriptors
+    for (int i = 0; i < 256; i++) {
+        if (process->fds[i] != NULL) {
+            fclose(process->fds[i]);
+        }
+    }
+
+    //free the stack
+    kfree((void *)(process->stack_pos - process->stack_size));
+
+    //free the page directory
+    free_page_directory(process->pd);
+
+    process->status = TASK_STATUS_FINISHED;
+
+    //We leave it up to the creator of the process to free the process struct itself
+
+    while (true);
+}
+
+process_t *process_by_pid(int pid) {
+    process_t *wanted_process = head_process;
+    while (wanted_process != NULL) {
+        if (wanted_process->pid == pid) {
+            return wanted_process;
+        }
+        wanted_process = wanted_process->next;
+    }
+    return NULL;
 }
 
 extern void jump_to_program(uint32_t esp, uint32_t ebp);
@@ -148,11 +172,14 @@ void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
         asm volatile ("mov %0, %%ebp" : : "r" (new_process->ebp));
         asm volatile ("sti");
         //set the function up as an function returning an int
-        int (*entry_ptr)(void) = (int (*)(void))new_process->entry;
+        int (*entry_ptr)(void) = (int (*)(void))new_process->entry_or_return;
         //call the function
         int return_code = entry_ptr();
-        terminal_printf("Process %d returned with code 0x%x\n", new_process->pid, return_code);
-        while (true);
+        asm volatile ("cli");
+        new_process->entry_or_return = return_code;
+        //remove the process from the scheduler
+        free_process(new_process);
+        kpanic("Something went wrong with the scheduler!");
 	}
 
     // Otherwise, we're already running, so just restore context and return
@@ -162,7 +189,7 @@ void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
 }
 
 
-int process_load_elf(char *path) {
+process_t *process_load_elf(char *path) {
 	file_descriptor_t *fd = fopen(path, 0);
 	if (fd->flags & FILE_NOTFOUND_FLAG || !(fd->flags & FILE_ISOPEN_FLAG))
 	{
@@ -201,5 +228,5 @@ int process_load_elf(char *path) {
 
     process_t *new_process = create_task((void *)loaded.entry_point, 0x1000);
     
-    return new_process->pid;
+    return new_process;
 }

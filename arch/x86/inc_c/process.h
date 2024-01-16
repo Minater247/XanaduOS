@@ -9,9 +9,11 @@
 
 typedef struct process {
     uint32_t pid;
-    uint32_t status;
+    volatile uint32_t status;
+    uint32_t stack_pos;
+    uint32_t stack_size;
     uint32_t esp, ebp;
-    uint32_t entry;
+    uint32_t entry_or_return;
     file_descriptor_t *fds[256];
     uint32_t num_fds;
     uint32_t max_fds;
@@ -23,9 +25,10 @@ typedef struct process {
 #define TASK_STATUS_RUNNING 1
 #define TASK_STATUS_WAITING 2
 #define TASK_STATUS_STOPPED 3
+#define TASK_STATUS_FINISHED 4
 
 void process_initialize();
-int process_load_elf(char *path);
+process_t *process_load_elf(char *path);
 process_t *create_task(void *entry_point, uint32_t stack_size);
 
 extern process_t *head_process;

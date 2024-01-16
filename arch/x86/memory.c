@@ -267,6 +267,25 @@ page_directory_t *clone_page_directory(page_directory_t *directory) {
     return new_directory;
 }
 
+void free_page_directory(page_directory_t *directory) {
+    //if the directory entry is the same as the kernel, leave it be
+    //otherwise, free it
+    for (uint32_t pde = 0; pde < 1024; pde++) {
+        if (directory->entries[pde] & 0x1) {
+            uint32_t kernel_entry = ((page_table_t *)kernel_pd.virt[pde])->pt_entry[0] & 0xFFFFF000;
+            uint32_t this_entry = ((page_table_t *)directory->virt[pde])->pt_entry[0] & 0xFFFFF000;
+            if (kernel_entry != this_entry) {
+                //free the page table
+                //note the use of kfree_a - this is because the page table allocation header is not necessarily at the start of the allocation.
+                //kmalloc_a's header is 0x0-0xFFF bytes before the pointer, so we need to use kfree_a to free it.
+                kfree_a((void *)directory->virt[pde]);
+            }
+        }
+    }
+    //free the directory
+    kfree(directory);
+}
+
 
 void switch_page_directory(page_directory_t *directory) {
     //bochs magic breakpoint
@@ -390,7 +409,6 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
     asm volatile ("cli");
     if (align)
     {
-        serial_printf("kmalloc_a(p) called!\n");
         heap_header_t *header;
         for (header = kheap; header != NULL; header = header->next)
         {
@@ -463,9 +481,6 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
                     *phys = ((page_table_t *)current_pd->virt[pd_entry])->pt_entry[pt_entry] & 0xFFFFF000;
                 }
 
-                // now we can return the aligned address
-                serial_printf("Returning 0x%x\n", aligned_addr);
-
                 asm volatile ("sti");
 
                 return (void *)aligned_addr;
@@ -474,7 +489,6 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
     }
     else
     {
-        serial_printf("kmalloc(_p) (%d) called!\n", size);
         heap_header_t *header;
         for (header = kheap; header != NULL; header = header->next)
         {
@@ -482,11 +496,9 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
             {
                 // we found a header that's big enough
                 // now we need to split it if it's too big
-                serial_printf("Found a header @ 0x%x\n", header);
                 if (header->length > size + sizeof(heap_header_t))
                 {   
                     // split the header
-                    serial_printf("Splitting (post)\n");
                     heap_header_t *new_header = (heap_header_t *)((uint32_t)header + sizeof(heap_header_t) + size);
                     new_header->magic = HEAP_MAGIC;
                     new_header->length = header->length - size - sizeof(heap_header_t);
@@ -513,8 +525,6 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
                     *phys = (((page_table_t *)current_pd->virt[pd_entry])->pt_entry[pt_entry] & 0xFFFFF000) + ((uint32_t)header & 0xFFF);
                 }
 
-                serial_printf("Returning 0x%x\n", (uint32_t)header + sizeof(heap_header_t));
-
                 asm volatile ("sti");
 
                 // now we can return the header
@@ -536,17 +546,23 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
     return kmalloc_int(size, align, phys);
 }
 
-void kfree(void *ptr)
+void kfree_int(void *ptr, bool unaligned)
 {
     kassert_msg(kheap != NULL, "kfree called before kheap initialization!");
     asm volatile ("cli");
     heap_header_t *header = (heap_header_t *)((uint32_t)ptr - sizeof(heap_header_t));
-    kassert_msg(header->magic == HEAP_MAGIC, "Invalid heap header magic number.");
+    if (!unaligned) {
+        kassert_msg(header->magic == HEAP_MAGIC, "Invalid heap header magic number.");
+    } else {
+        //the header may be up to 0xFFF bytes before the pointer
+        while (header->magic != HEAP_MAGIC) {
+            header = (heap_header_t *)((uint32_t)header - 1);
+        }
+    }
     header->free = true;
     // now we need to merge this header with the next header if it's free
     if (header->next != NULL && header->next->free)
     {
-        serial_printf("Merging 0x%x (%d) with 0x%x (%d) to make 0x%x (%d)\n", header, header->length, header->next, header->next->length, header, header->length + header->next->length + sizeof(heap_header_t));
         header->length += header->next->length + sizeof(heap_header_t);
         header->next = header->next->next;
         if (header->next != NULL)
@@ -567,6 +583,16 @@ void kfree(void *ptr)
     }
 
     asm volatile ("sti");
+}
+
+void kfree(void *ptr)
+{
+    kfree_int(ptr, false);
+}
+
+void kfree_a(void *ptr)
+{
+    kfree_int(ptr, true);
 }
 
 void *kmalloc_a(uint32_t size)
