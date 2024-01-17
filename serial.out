@@ -1,66 +1,59 @@
-Syscall: 0x1
-Returning from syscall.
-Syscall: 0x2
-Returning from syscall.
-Syscall: 0x0
-Returning from syscall.
-Syscall: 0x1
-Returning from syscall.
-Syscall: 0x0
-Returning from syscall.
-Syscall: 0x1
-Returning from syscall.
-Syscall: 0x0
-Returning from syscall.
-Syscall: 0x1
-Returning from syscall.
-Syscall: 0x0
-Returning from syscall.
-Syscall: 0x1
-Returning from syscall.
-Syscall: 0x0
-Returning from syscall.
-Syscall: 0x1
-Returning from syscall.
-Syscall: 0x0
-Returning from syscall.
-Syscall: 0x1
-Returning from syscall.
-Syscall: 0x0
-Returning from syscall.
-Syscall: 0x1
-Returning from syscall.
-Syscall: 0x0
-Returning from syscall.
-Syscall: 0x1
-Returning from syscall.
-Syscall: 0x0
-Returning from syscall.
-Syscall: 0x1
-Returning from syscall.
-Syscall: 0x0
-Returning from syscall.
-Syscall: 0x1
-Returning from syscall.
-Syscall: 0x0
-Returning from syscall.
-Syscall: 0x1
-Returning from syscall.
-Syscall: 0x0
-Returning from syscall.
-Syscall: 0x1
-Returning from syscall.
-Syscall: 0x0
-Returning from syscall.
-Syscall: 0x1
-Returning from syscall.
-Syscall: 0x0
-Returning from syscall.
-Syscall: 0x1
-Returning from syscall.
-Syscall: 0x0
-Returning from syscall.
-Syscall: 0x3
-Returning from syscall.
-Syscall: 0x1
-Returning from syscall.
+KMALLOC:
+KMALLOC:
+KMALLOC:
+KMALLOC:
+KMALLOC:
+KMALLOC:
+KMALLOC:
+KMALLOC:
+KMALLOC:
+KMALLOC:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE

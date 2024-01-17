@@ -443,6 +443,7 @@ void heap_dump()
 
 void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
 {
+    serial_printf("KMALLOC:\n");
     if (kheap == NULL)
     {
         // simple alloc
@@ -532,6 +533,7 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
                     *phys = ((page_table_t *)current_pd->virt[pd_entry])->pt_entry[pt_entry] & 0xFFFFF000;
                 }
 
+                serial_printf("KMALLOC DONE\n");
                 return (void *)aligned_addr;
             }
         }
@@ -575,6 +577,7 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
                 }
 
                 // now we can return the header
+                serial_printf("KMALLOC DONE\n");
                 return (void *)((uint32_t)header + sizeof(heap_header_t));
             }
         }

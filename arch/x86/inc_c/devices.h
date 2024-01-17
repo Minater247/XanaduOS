@@ -23,7 +23,6 @@ typedef struct device {
 typedef struct {
     uint32_t flags;
     device_t *device;
-    uint32_t mode;
 } __attribute__((packed)) device_file_t;
 
 void devices_initialize();

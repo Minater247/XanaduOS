@@ -12,11 +12,9 @@
 #define FILE_ISDIR_FLAG 0x4 //set if found dir, expecting file
 #define FILE_ISFILE_FLAG 0x8 //set if found file, expecting dir
 #define FILE_WRITTEN_FLAG 0x10
+#define FILE_MODE_READ 0x20
+#define FILE_MODE_WRITE 0x40
 #define FILE_NOTFOUND_FLAG 0x80000000
-
-#define FILE_MODE_READ 0x1
-#define FILE_MODE_WRITE 0x2
-#define FILE_MODE_APPEND 0x4
 
 #define SEEK_SET 0
 #define SEEK_CUR 1

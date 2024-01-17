@@ -215,5 +215,10 @@ void keyboard_install()
 {
     irq_install_handler(1, keyboard_interrupt_handler);
 
+    //init buffer/vars
+    keypress_buffer_size = 0;
+    shift = false;
+    caps = false;
+
     register_device(&kbd_device);
 }

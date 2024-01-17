@@ -58,11 +58,10 @@ ramdisk_file_t *ropen(char *path, char *flags) {
                 if (item == path_length) {
                     //we're at the end of the path, so return the file
                     ramdisk_file_t *file = (ramdisk_file_t*)kmalloc(sizeof(ramdisk_file_t));
-                    file->flags = FILE_ISOPEN_FLAG | FILE_ISFILE_FLAG;
+                    file->flags = FILE_ISOPEN_FLAG | FILE_ISFILE_FLAG | FILE_MODE_READ;
                     file->length = file_header->length;
                     file->addr = (uint32_t)ramdisk + ramdisk->headers_len + file_header->offset;
                     file->seek_pos = 0;
-                    file->mode = FILE_MODE_READ;
                     return file;
                 } else {
                     //we're not at the end of the path, so return an error
@@ -161,7 +160,7 @@ int rread(void *ptr, size_t size, size_t nmemb, ramdisk_file_t *file) {
     if (file->seek_pos >= file->length) {
         return 0;
     }
-    if (!(file->mode & FILE_MODE_READ)) {
+    if (!(file->flags & FILE_MODE_READ)) {
         return -1;
     }
     size_t bytes_to_read = size * nmemb;

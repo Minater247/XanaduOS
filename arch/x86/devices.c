@@ -43,22 +43,22 @@ device_file_t *dopen(char *path, char *flags) {
             ret->device = current_device;
 
             if (flags[0] == 'r') {
-                ret->mode = FILE_MODE_READ;
+                ret->flags |= FILE_MODE_READ;
             } else if (flags[0] == 'w') {
-                ret->mode = FILE_MODE_WRITE;
+                ret->flags |= FILE_MODE_WRITE;
             } else if (flags[0] == 'a') {
-                ret->mode = FILE_MODE_APPEND;
+                ret->flags |= FILE_MODE_WRITE;
             } else {
-                ret->mode = FILE_MODE_READ | FILE_MODE_WRITE;
+                ret->flags |= FILE_MODE_READ | FILE_MODE_WRITE;
             }
 
             if (flags[1] == '+') {
                 if (flags[0] == 'r') {
-                    ret->mode = FILE_MODE_WRITE;
+                    ret->flags |= FILE_MODE_WRITE;
                 } else if (flags[0] == 'w') {
-                    ret->mode = FILE_MODE_READ;
+                    ret->flags |= FILE_MODE_READ;
                 } else if (flags[0] == 'a') {
-                    ret->mode = FILE_MODE_READ;
+                    ret->flags |= FILE_MODE_READ;
                 }
             }
 
@@ -89,7 +89,7 @@ int dread(void *ptr, size_t size, size_t nmemb, device_file_t *file) {
     if (!(file->flags & FILE_ISFILE_FLAG)) {
         return -1;
     }
-    if (!(file->mode & FILE_MODE_READ)) {
+    if (!(file->flags & FILE_MODE_READ)) {
         return -1;
     }
     return file->device->read(ptr, size * nmemb);
@@ -102,7 +102,7 @@ int dwrite(void *ptr, size_t size, size_t nmemb, device_file_t *file) {
     if (!(file->flags & FILE_ISFILE_FLAG)) {
         return -1;
     }
-    if (!(file->mode & FILE_MODE_WRITE)) {
+    if (!(file->flags & FILE_MODE_WRITE)) {
         return -1;
     }
     return file->device->write(ptr, size * nmemb);
@@ -214,7 +214,6 @@ void *dcopy(void *fd) {
     device_file_t *ret = (device_file_t*)kmalloc(sizeof(device_file_t));
     ret->flags = file->flags;
     ret->device = file->device;
-    ret->mode = file->mode;
     return ret;
 }
 
@@ -227,7 +226,7 @@ int dstat(void *file_in, stat_t *statbuf) {
     statbuf->st_dev = device_fs.identifier;
     statbuf->pad1 = 0;
     statbuf->st_ino = 0;
-    statbuf->st_mode = FILE_MODE_READ | FILE_MODE_WRITE;
+    statbuf->st_mode = file->flags & (FILE_MODE_READ | FILE_MODE_WRITE);
     statbuf->st_nlink = 0;
     statbuf->st_uid = 0;
     statbuf->st_gid = 0;

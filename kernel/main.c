@@ -40,7 +40,7 @@ void kernel_main() {
 	fopen("/dev/trm", "r+"); // stdout
 	fopen("/dev/trm", "r+"); // stderr
 
-	process_t *new_process = process_load_elf("/mnt/ramdisk/bin/hello.elf");
+	process_t *new_process = process_load_elf("/mnt/ramdisk/bin/xansh.elf");
 	terminal_printf("Loaded ELF with PID %d\n", new_process->pid);
 
 	while (new_process->status != TASK_STATUS_FINISHED) {}
