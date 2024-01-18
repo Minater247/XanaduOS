@@ -3,10 +3,11 @@
 
 #include "inc_c/hardware.h"
 
-#define SYSCALL_READ 0x00
-#define SYSCALL_WRITE 0x01
-#define SYSCALL_OPEN 0x02
-#define SYSCALL_CLOSE 0x03
+#define SYSCALL_READ 0
+#define SYSCALL_WRITE 1
+#define SYSCALL_OPEN 2
+#define SYSCALL_CLOSE 3
+#define SYSCALL_EXIT 60
 
 void syscall_handler(regs_t *regs);
 

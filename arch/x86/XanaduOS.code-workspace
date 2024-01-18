@@ -1,0 +1,37 @@
+{
+	"folders": [
+		{
+			"path": "../.."
+		},
+		{
+			"path": "../../../Xanadu Programs/Xansh"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"*.ppS": "m68k",
+			"*.s": "asm-intel-x86-generic",
+			"stddef.h": "c",
+			"boot.h": "c",
+			"display.h": "c",
+			"stdint.h": "c",
+			"hardware.h": "c",
+			"io.h": "c",
+			"unused.h": "c",
+			"tables.h": "c",
+			"keyboard.h": "c",
+			"stdbool.h": "c",
+			"errors.h": "c",
+			"multiboot.h": "c",
+			"string.h": "c",
+			"filesystem.h": "c",
+			"elf.h": "c",
+			"process.h": "c",
+			"serial.h": "c",
+			"devices.h": "c",
+			"elf_x86.h": "c",
+			"memory.h": "c"
+		},
+		"explorer.sortOrder": "type"
+	}
+}

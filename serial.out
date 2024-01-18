@@ -11,6 +11,23 @@ KMALLOC:
 KMALLOC DONE
 KMALLOC:
 KMALLOC DONE
+SCHEDULE: 0 -> 0
+KMALLOC:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE
+KMALLOCSCHEDULE: 0 -> 0
+:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE
+KMALLOC:
+KMALLOC DONE
+SCHEDULE: 0 -> 0
 KMALLOC:
 KMALLOC DONE
 KMALLOC:
@@ -43,17 +60,1898 @@ KMALLOC:
 KMALLOC DONE
 KMALLOC:
 KMALLOC DONE
-KMALLOC:
-KMALLOC DONE
-KMALLOC:
-KMALLOC DONE
-KMALLOC:
-KMALLOC DONE
-KMALLOC:
-KMALLOC DONE
-KMALLOC:
-KMALLOC DONE
-KMALLOC:
-KMALLOC DONE
-KMALLOC:
-KMALLOC DONE
+SCHEDULE: 0 -> 1
+Starting process.
+Syscall: 0x1
+Returning from syscall.
+Syscall: 0x1
+Returning from syscall.
+Syscall: 0x1
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning froSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+m syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscallSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscaSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+ll.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from sysSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+call.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from sSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+yscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning frSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+om syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+ReturningSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+ from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+RetuSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+rning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+ReturSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+ning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscaSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+ll.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+ReturningSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+ from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+RetSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+urning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+ReturninSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+g from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscaSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+ll.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+ReturninSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+g from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+RSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+eturning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+ReturningSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+ from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+ReturniSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+ng from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+ReturnSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+ing from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscallSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning fromSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+ syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from sysSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+call.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+ReSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+turning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+ReturSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+ning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from sySCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+scall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+RetSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+urning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+ReturniSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+ng from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscaSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+ll.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+ReturniSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+ng from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscallSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from sysSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+call.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscaSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+ll.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning fromSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+ syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from sySCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+scall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+ReturningSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+ from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+RetuSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+rning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+ReturSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+ning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+RSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+eturning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from sSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+yscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from sysSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+call.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning froSCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+m syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+Returning from syscall.
+Syscall: 0x0
+SCHEDULE: 1 -> 0
+SCHEDULE: 0 -> 1
+Returning from syscall.
+Syscall: 0x0

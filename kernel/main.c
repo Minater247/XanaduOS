@@ -41,7 +41,6 @@ void kernel_main() {
 	fopen("/dev/trm", "r+"); // stderr
 
 	process_t *new_process = process_load_elf("/mnt/ramdisk/bin/xansh.elf");
-	terminal_printf("Loaded ELF with PID %d\n", new_process->pid);
 
 	while (new_process->status != TASK_STATUS_FINISHED) {}
 	terminal_printf("\nProcess finished with code 0x%x\n", new_process->entry_or_return);
@@ -52,6 +51,8 @@ void kernel_main() {
 	// while (true) {
 	// 	terminal_printf("B");
 	// }
+
+	while (true);
 
     char buf;
 	file_descriptor_t *kbd = stdin;

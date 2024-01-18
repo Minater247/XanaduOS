@@ -30,6 +30,7 @@ typedef struct process {
 void process_initialize();
 process_t *process_load_elf(char *path);
 process_t *create_task(void *entry_point, uint32_t stack_size, page_directory_t *pd);
+void free_process(process_t *process);
 
 extern process_t *head_process;
 extern process_t *current_process;

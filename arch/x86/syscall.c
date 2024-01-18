@@ -6,6 +6,7 @@
 #include "../../kernel/include/filesystem.h"
 #include "inc_c/process.h"
 #include "inc_c/syscall.h"
+#include "inc_c/process.h"
 
 void syscall_handler(regs_t *regs) {
     serial_printf("Syscall: 0x%x\n", regs->eax);
@@ -48,6 +49,10 @@ void syscall_handler(regs_t *regs) {
             } else {
                 regs->eax = -1;
             }
+            break;
+        case SYSCALL_EXIT:
+            current_process->entry_or_return = regs->ebx;
+            free_process(current_process);
             break;
         default:
             serial_printf("Unknown syscall: 0x%x\n", regs->eax);
