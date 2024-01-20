@@ -75,6 +75,8 @@ process_t *create_task(void *entry_point, uint32_t stack_size, page_directory_t 
     for (int i = 0; i < 256; i++) {
         if (current_process->fds[i] != NULL) {
             new_process->fds[i] = copy_descriptor(current_process->fds[i], i);
+        } else {
+            new_process->fds[i] = NULL;
         }
     }
 

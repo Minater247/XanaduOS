@@ -200,6 +200,7 @@ file_descriptor_t *fopen(char *path, char *flags) {
     if (path[0] != '/') {
         file_descriptor_t *ret = (file_descriptor_t*)kmalloc(sizeof(file_descriptor_t));
         ret->flags = FILE_NOTFOUND_FLAG;
+        ret->fs = NULL;
         return ret;
     }
 
@@ -222,6 +223,7 @@ file_descriptor_t *fopen(char *path, char *flags) {
         //TODO: allow setting up default filesystem for non-mounted paths
         file_descriptor_t *ret = (file_descriptor_t*)kmalloc(sizeof(file_descriptor_t));
         ret->flags = FILE_NOTFOUND_FLAG;
+        ret->fs = NULL;
         return ret;
     }
 
@@ -259,6 +261,10 @@ int fwrite(char *buf, size_t size, size_t count, file_descriptor_t *fd) {
 }
 
 int fclose(file_descriptor_t *fd) {
+    if (fd->fs == NULL) {
+        return 0;
+    }
+
     if (fd->fs->close == NULL) {
         return 0;
     }
@@ -279,6 +285,7 @@ dir_descriptor_t *fopendir(char *path) {
     if (path[0] != '/') {
         dir_descriptor_t *ret = (dir_descriptor_t*)kmalloc(sizeof(dir_descriptor_t));
         ret->flags = FILE_NOTFOUND_FLAG;
+        ret->fs = NULL;
         return ret;
     }
 
@@ -300,6 +307,7 @@ dir_descriptor_t *fopendir(char *path) {
         //TODO: allow setting up default filesystem for non-mounted paths
         dir_descriptor_t *ret = (dir_descriptor_t*)kmalloc(sizeof(dir_descriptor_t));
         ret->flags = FILE_NOTFOUND_FLAG;
+        ret->fs = NULL;
         return ret;
     }
 

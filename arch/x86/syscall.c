@@ -41,6 +41,7 @@ void syscall_handler(regs_t *regs) {
                 fd = (file_descriptor_t *)fopendir((char *)regs->ebx);
                 regs->eax = fd->id;
             } else if (fd->flags & FILE_NOTFOUND_FLAG) {
+                fclose(fd);
                 regs->eax = -1;
             } else {
                 regs->eax = fd->id;
