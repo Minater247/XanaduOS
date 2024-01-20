@@ -25,9 +25,9 @@
 #define stderr current_process->fds[2]
 
 typedef struct {
-    uint32_t flags;
-    char *name;
-} simple_return_t;
+    size_t inode;
+    char name[256];
+} dirent_t;
 
 #if defined(__ARCH_x86__)
 
@@ -66,9 +66,10 @@ typedef struct {
     int (*close)(void *file);
     void *(*opendir)(char *path);
     int (*stat)(void *file, stat_t *statbuf);
-    simple_return_t (*readdir)(void *dir);
+    dirent_t (*readdir)(void *dir);
     int (*closedir)(void *dir);
     void *(*copy)(void *fd); //both should be file_descriptor_t*, but we can't include that here
+    dirent_t *(*getdent)(dirent_t *buf, uint32_t entry_num, void *dir);
 } filesystem_t;
 
 //file descriptor
@@ -107,11 +108,11 @@ int fread(char *buf, size_t size, size_t count, file_descriptor_t *fd);
 int fwrite(char *buf, size_t size, size_t count, file_descriptor_t *fd);
 int fclose(file_descriptor_t *fd);
 dir_descriptor_t *fopendir(char *path);
-simple_return_t freaddir(dir_descriptor_t *dd);
 int fclosedir(dir_descriptor_t *dd);
 int fseek(file_descriptor_t *fd, size_t offset, int whence);
 size_t ftell(file_descriptor_t *fd);
 int fstat(file_descriptor_t *fd, stat_t *statbuf);
 file_descriptor_t *copy_descriptor(file_descriptor_t *fd, uint32_t id);
+dirent_t *fgetdent(dirent_t *buf, uint32_t entry_num, dir_descriptor_t *fd);
 
 #endif

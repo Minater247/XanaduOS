@@ -108,27 +108,49 @@ int dwrite(void *ptr, size_t size, size_t nmemb, device_file_t *file) {
     return file->device->write(ptr, size * nmemb);
 }
 
-simple_return_t dreaddir(device_dir_t *dir) {
+dirent_t dreaddir(device_dir_t *dir) {
     // Read the nth device, or if we don't have that many devices, return NULL
     device_t *current_device = device_head;
     for (uint32_t i = 0; i < dir->pos; i++) {
         if (current_device == NULL) {
-            return (simple_return_t){FILE_NOTFOUND_FLAG, NULL};
+            return (dirent_t){0, {}};
         }
         current_device = current_device->next;
     }
 
-    return (simple_return_t){0, current_device->name};
+    dirent_t ret = {1, {}};
+    strncpy(ret.name, current_device->name, 256);
+    dir->pos++;
+    return ret;
 }
 
 int dseek(device_file_t *file, size_t offset, int whence) {
-    if (!(file->flags & FILE_ISOPEN_FLAG)) {
+    if (file->flags & FILE_ISOPEN_FLAG) {
+        return file->device->seek(offset, whence);
+    } else if (file->flags & FILE_ISOPENDIR_FLAG) {
+        device_dir_t *dir = (device_dir_t *)file;
+        if (whence == SEEK_SET) {
+            dir->pos = offset;
+            return 0;
+        } else if (whence == SEEK_CUR) {
+            dir->pos += offset;
+            return 0;
+        } else if (whence == SEEK_END) {
+            // Read the number of devices
+            uint32_t num_devices = 0;
+            device_t *current_device = device_head;
+            while (current_device != NULL) {
+                num_devices++;
+                current_device = current_device->next;
+            }
+
+            dir->pos = num_devices + offset;
+            return 0;
+        }
+        return -1;
+    } else {
         return -1;
     }
-    if (!(file->flags & FILE_ISFILE_FLAG)) {
-        return -1;
-    }
-    return file->device->seek(offset, whence);
 }
 
 size_t dtell(device_file_t *file) {
@@ -142,11 +164,17 @@ size_t dtell(device_file_t *file) {
 }
 
 int dclose(device_file_t *file) {
-    if (!(file->flags & FILE_ISOPEN_FLAG)) {
+    if (file == NULL) {
         return -1;
     }
-    kfree(file);
-    return 0;
+    if (file->flags & FILE_ISOPEN_FLAG) {
+        kfree(file);
+        return 0;
+    } else if (file->flags & FILE_ISOPENDIR_FLAG) {
+        kfree(file);
+        return 0;
+    }
+    return -1;
 }
 
 int dclosedir(device_dir_t *dir) {
@@ -217,6 +245,29 @@ void *dcopy(void *fd) {
     return ret;
 }
 
+dirent_t *dgetdent(dirent_t *buf, uint32_t entry_num, void *dir) {
+    device_dir_t *device_dir = (device_dir_t*)dir;
+    if (device_dir->flags & FILE_ISOPENDIR_FLAG) {
+        device_t *current_device = device_head;
+        for (uint32_t i = 0; i < entry_num; i++) {
+            if (current_device == NULL) {
+                return NULL;
+            }
+            current_device = current_device->next;
+        }
+
+        if (current_device == NULL) {
+            return NULL;
+        }
+
+        buf->inode = 1;
+        strncpy(buf->name, current_device->name, 256);
+        return buf;
+    } else {
+        return NULL;
+    }
+}
+
 int dstat(void *file_in, stat_t *statbuf) {
     device_file_t *file = (device_file_t*)file_in; //for some reason, this is necessary to get the compiler to stop complaining
     if (!(file->flags & FILE_ISOPEN_FLAG)) {
@@ -226,7 +277,7 @@ int dstat(void *file_in, stat_t *statbuf) {
     statbuf->st_dev = device_fs.identifier;
     statbuf->pad1 = 0;
     statbuf->st_ino = 0;
-    statbuf->st_mode = file->flags & (FILE_MODE_READ | FILE_MODE_WRITE);
+    statbuf->st_mode = file->flags;
     statbuf->st_nlink = 0;
     statbuf->st_uid = 0;
     statbuf->st_gid = 0;
@@ -256,9 +307,10 @@ void devices_initialize() {
     device_fs.tell = (size_t(*)(void*))dtell;
     device_fs.close = (int(*)(void*))dclose;
     device_fs.opendir = (void*(*)(char*))dopendir;
-    device_fs.readdir = (simple_return_t(*)(void*))dreaddir;
+    device_fs.readdir = (dirent_t(*)(void*))dreaddir;
     device_fs.closedir = (int(*)(void*))dclosedir;
     device_fs.copy = dcopy;
+    device_fs.getdent = dgetdent;
     device_fs_registered = register_filesystem(&device_fs);
     if (!device_fs_registered) {
         kpanic("Failed to register device filesystem!\n");

@@ -24,6 +24,16 @@ ramdisk_file_t *ropen(char *path, char *flags) {
         return file;
     }
 
+    //if the path is just /, it's the root directory
+    if (strncmp(path, "/", 2) == 0 || strncmp(path, "", 1) == 0) {
+        ramdisk_file_t *file = (ramdisk_file_t*)kmalloc(sizeof(ramdisk_file_t));
+        file->flags = FILE_ISOPEN_FLAG | FILE_ISDIR_FLAG;
+        file->length = ramdisk->num_root_files;
+        file->addr = (uint32_t)ramdisk + sizeof(ramdisk_size_t);
+        file->seek_pos = 0;
+        return file;
+    }
+
     uint8_t item = 0;
     char path_item[64];
     uint32_t path_length = get_path_length(path) - 1;
@@ -90,7 +100,7 @@ ramdisk_dir_t *ropendir(char *path) {
     get_path_item(path, path_item, item);
 
     //if the path is just "/", return the root directory
-    if (strncmp(path, "/", 2) == 0) {
+    if (strncmp(path, "/", 2) == 0 || strncmp(path, "", 1) == 0) {
         ramdisk_dir_t *dir = (ramdisk_dir_t*)kmalloc(sizeof(ramdisk_dir_t));
         dir->flags = FILE_ISOPENDIR_FLAG | FILE_ISDIR_FLAG;
         dir->num_files = ramdisk->num_root_files;
@@ -174,17 +184,15 @@ int rread(void *ptr, size_t size, size_t nmemb, ramdisk_file_t *file) {
     return bytes_to_read;
 }
 
-simple_return_t rreaddir(ramdisk_dir_t *dir) {
+dirent_t rreaddir(ramdisk_dir_t *dir) {
 
     if (!(dir->flags & FILE_ISOPENDIR_FLAG)) {
-        simple_return_t ret = {0, NULL};
-        ret.flags |= FILE_NOTFOUND_FLAG;
+        dirent_t ret = {0, {}};
         return ret;
     }
 
     if (dir->idx >= dir->num_files) {
-        simple_return_t ret = {0, NULL};
-        ret.flags |= FILE_NOTFOUND_FLAG;
+        dirent_t ret = {0, {}};
         return ret;
     }
 
@@ -198,33 +206,53 @@ simple_return_t rreaddir(ramdisk_dir_t *dir) {
         }
     }
 
-    simple_return_t ret = {0, file_header->name};
-    ret.flags |= FILE_ISFILE_FLAG;
+    dirent_t ret = {1, {}};
+    strncpy(ret.name, file_header->name, 64);
     dir->idx++;
     return ret;
 }
 
 int rseek(ramdisk_file_t *file, size_t offset, int whence) {
-    if (!(file->flags & FILE_ISOPEN_FLAG)) {
+    if (file->flags & FILE_ISOPEN_FLAG) {
+        switch (whence) {
+            case SEEK_SET:
+                file->seek_pos = offset;
+                break;
+            case SEEK_CUR:
+                file->seek_pos += offset;
+                break;
+            case SEEK_END:
+                file->seek_pos = file->length + offset;
+                break;
+            default:
+                return -1;
+        }
+
+        if (file->seek_pos > file->length) {
+            file->seek_pos = file->length;
+        }
+    } else if (file->flags & FILE_ISOPENDIR_FLAG) {
+        ramdisk_dir_t *dir = (ramdisk_dir_t*)file;
+        switch (whence) {
+            case SEEK_SET:
+                dir->idx = offset;
+                break;
+            case SEEK_CUR:
+                dir->idx += offset;
+                break;
+            case SEEK_END:
+                dir->idx = dir->num_files + offset;
+                break;
+            default:
+                return -1;
+        }
+
+        if (dir->idx > dir->num_files) {
+            dir->idx = dir->num_files;
+        }
+    } else {
         return -1;
-    }
 
-    switch (whence) {
-        case SEEK_SET:
-            file->seek_pos = offset;
-            break;
-        case SEEK_CUR:
-            file->seek_pos += offset;
-            break;
-        case SEEK_END:
-            file->seek_pos = file->length + offset;
-            break;
-        default:
-            return -1;
-    }
-
-    if (file->seek_pos > file->length) {
-        file->seek_pos = file->length;
     }
 
     return 0;
@@ -269,16 +297,43 @@ void *rcopy(void *file_in) {
     return ret;
 }
 
+dirent_t *rgetdent(dirent_t *buf, uint32_t entry_num, void *dir) {
+    ramdisk_dir_t *ramdisk_dir = (ramdisk_dir_t*)dir;
+    if (ramdisk_dir->flags & FILE_ISOPENDIR_FLAG) {
+        if (entry_num >= ramdisk_dir->num_files) {
+            return NULL;
+        }
+
+        ramdisk_file_header_t *file_header = (ramdisk_file_header_t*)((uint32_t)ramdisk_dir->files);
+        for (uint32_t i = 0; i < entry_num; i++) {
+            //if this is a directory, skip over it and all its blocks.
+            if (file_header->magic == DIR_ENTRY_MAGIC) {
+                file_header = (ramdisk_file_header_t*)((uint32_t)file_header + sizeof(ramdisk_dir_header_t) * (((ramdisk_dir_header_t*)file_header)->num_blocks + 1));
+            } else {
+                file_header = (ramdisk_file_header_t*)((uint32_t)file_header + sizeof(ramdisk_file_header_t));
+            }
+        }
+
+        buf->inode = 1;
+        strncpy(buf->name, file_header->name, 64);
+
+        return buf;
+    } else {
+        return NULL;
+    }
+
+}
+
 int rstat(void *file_in, stat_t *statbuf) {
     ramdisk_file_t *file = (ramdisk_file_t*)file_in; //for some reason, this is necessary to get the compiler to stop complaining
-    if (!(file->flags & FILE_ISOPEN_FLAG)) {
+    if (!(file->flags & FILE_ISOPEN_FLAG || file->flags & FILE_ISOPENDIR_FLAG)) {
         return -1;
     }
 
     statbuf->st_dev = ramdisk_fs.identifier;
     statbuf->pad1 = 0;
     statbuf->st_ino = 0;
-    statbuf->st_mode = FILE_MODE_READ;
+    statbuf->st_mode = file->flags;
     statbuf->st_nlink = 0;
     statbuf->st_uid = 0;
     statbuf->st_gid = 0;
@@ -327,10 +382,11 @@ void ramdisk_initialize(multiboot_info_t *mboot_info) {
     ramdisk_fs.tell = (size_t(*)(void*))rtell;
     ramdisk_fs.close = (int(*)(void*))rclose;
     ramdisk_fs.opendir = (void*(*)(char*))ropendir;
-    ramdisk_fs.readdir = (simple_return_t(*)(void*))rreaddir;
+    ramdisk_fs.readdir = (dirent_t(*)(void*))rreaddir;
     ramdisk_fs.closedir = (int(*)(void*))rclosedir;
     ramdisk_fs.stat = rstat;
     ramdisk_fs.copy = rcopy;
+    ramdisk_fs.getdent = rgetdent;
     ramdisk_fs_registered = register_filesystem(&ramdisk_fs);
     if (!ramdisk_fs_registered) {
         kpanic("Failed to register ramdisk filesystem!\n");

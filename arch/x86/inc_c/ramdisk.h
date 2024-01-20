@@ -67,5 +67,6 @@ void ramdisk_initialize();
 ramdisk_file_t *ropen(char *path, char *flags);
 int rread(void *ptr, size_t size, size_t nmemb, ramdisk_file_t *file);
 int rseek(ramdisk_file_t *file, size_t offset, int whence);
+ramdisk_dir_t *ropendir(char *path);
 
 #endif

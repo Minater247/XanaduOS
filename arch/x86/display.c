@@ -311,6 +311,79 @@ void terminal_write(const char *data, size_t size)
                 }
                 //move the index to the end of the sequence
                 i = end_i;
+            } else if (data[end_i] == 'J') {
+                //can be one of 0-2
+                uint32_t start_i = i + 2;
+                uint32_t num = 0;
+                while (data[start_i] >= '0' && data[start_i] <= '9')
+                {
+                    num *= 10;
+                    num += data[start_i] - '0';
+                    start_i++;
+                }
+                if (num == 0) {
+                    //clear from cursor to end of screen
+                    for (uint32_t y = terminal_row; y < VGA_HEIGHT; y++) {
+                        for (uint32_t x = 0; x < VGA_WIDTH; x++) {
+                            terminal_putentryat(' ', terminal_color, x, y);
+                        }
+                    }
+                } else if (num == 1) {
+                    //clear from cursor to beginning of screen
+                    for (uint32_t y = 0; y < terminal_row; y++) {
+                        for (uint32_t x = 0; x < VGA_WIDTH; x++) {
+                            terminal_putentryat(' ', terminal_color, x, y);
+                        }
+                    }
+                } else if (num == 2) {
+                    //clear entire screen
+                    for (uint32_t y = 0; y < VGA_HEIGHT; y++) {
+                        for (uint32_t x = 0; x < VGA_WIDTH; x++) {
+                            terminal_putentryat(' ', terminal_color, x, y);
+                        }
+                    }
+                }
+                i = end_i;
+            } else if (data[end_i] == 'M') {
+                //scroll up
+                for (uint32_t y = terminal_row; y < VGA_HEIGHT - 1; y++) {
+                    for (uint32_t x = 0; x < VGA_WIDTH; x++) {
+                        terminal_buffer[y * VGA_WIDTH + x] = terminal_buffer[(y + 1) * VGA_WIDTH + x];
+                    }
+                }
+                for (uint32_t x = 0; x < VGA_WIDTH; x++) {
+                    terminal_putentryat(' ', terminal_color, x, VGA_HEIGHT - 1);
+                }
+                i = end_i;
+            } else if (data[end_i] == 'H') {
+                //move cursor to position
+                uint32_t start_i = i + 2;
+                uint32_t num = 0;
+                while (data[start_i] >= '0' && data[start_i] <= '9')
+                {
+                    num *= 10;
+                    num += data[start_i] - '0';
+                    start_i++;
+                }
+                if (num == 0) {
+                    terminal_setpos(0, 0);
+                } else {
+                    uint32_t x = num;
+                    uint32_t y = 0;
+                    while (data[start_i] == ';') {
+                        start_i++;
+                        num = 0;
+                        while (data[start_i] >= '0' && data[start_i] <= '9')
+                        {
+                            num *= 10;
+                            num += data[start_i] - '0';
+                            start_i++;
+                        }
+                        y = num;
+                    }
+                    terminal_setpos(x, y);
+                }
+                i = end_i;
             }
         }
         else

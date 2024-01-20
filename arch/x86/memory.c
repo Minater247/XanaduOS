@@ -443,7 +443,6 @@ void heap_dump()
 
 void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
 {
-    serial_printf("KMALLOC:\n");
     if (kheap == NULL)
     {
         // simple alloc
@@ -481,6 +480,7 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
                     heap_header_t *new_header = (heap_header_t *)(new_header_address);
                     new_header->magic = HEAP_MAGIC;
                     new_header->length = header_size_new;
+                    kassert(new_header->length != 0);
                     new_header->next = header->next;
                     new_header->prev = header;
                     new_header->free = false;
@@ -492,6 +492,7 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
 
                     header->next = new_header;
                     header->length = header_size_old;
+                    kassert(header->length != 0);
                     header = new_header;
 
                     kassert(header->length >= size);
@@ -520,7 +521,6 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
 
                     header->next = new_header;
                     header->length = header_size_old;
-
                 }
 
                 header->free = false;
@@ -532,8 +532,6 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
                     uint32_t pt_entry = (aligned_addr >> 12) & 0x3FF;
                     *phys = ((page_table_t *)current_pd->virt[pd_entry])->pt_entry[pt_entry] & 0xFFFFF000;
                 }
-
-                serial_printf("KMALLOC DONE\n");
                 return (void *)aligned_addr;
             }
         }
@@ -577,7 +575,6 @@ void *kmalloc_int(uint32_t size, bool align, uint32_t *phys)
                 }
 
                 // now we can return the header
-                serial_printf("KMALLOC DONE\n");
                 return (void *)((uint32_t)header + sizeof(heap_header_t));
             }
         }

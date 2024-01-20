@@ -196,11 +196,19 @@ int unmount_filesystem_by_path(char *path) {
 }
 
 file_descriptor_t *fopen(char *path, char *flags) {
+    //later on we will check for the PWD, but for now only accept absolute paths
+    if (path[0] != '/') {
+        file_descriptor_t *ret = (file_descriptor_t*)kmalloc(sizeof(file_descriptor_t));
+        ret->flags = FILE_NOTFOUND_FLAG;
+        return ret;
+    }
+
     // Check whether this path matches a mount point
     mount_point_t *cur_mount_point = &head_mount_point;
     while (path[0] == '/') {
         path++;
     }
+    
     int len;
     while (cur_mount_point != NULL) {
         len = strlen(cur_mount_point->path);
@@ -231,7 +239,11 @@ file_descriptor_t *fopen(char *path, char *flags) {
 file_descriptor_t *copy_descriptor(file_descriptor_t *fd, uint32_t id) {
     file_descriptor_t *ret = (file_descriptor_t*)kmalloc(sizeof(file_descriptor_t));
     ret->fs = fd->fs;
-    ret->fs_data = fd->fs->copy(fd->fs_data);
+    if (fd->fs_data != NULL) {
+        ret->fs_data = fd->fs->copy(fd->fs_data);
+    } else {
+        ret->fs_data = NULL;
+    }
     ret->flags = fd->flags;
     ret->id = id;
     return ret;
@@ -263,6 +275,13 @@ int fclose(file_descriptor_t *fd) {
 }
 
 dir_descriptor_t *fopendir(char *path) {
+    //later on we will check for the PWD, but for now only accept absolute paths
+    if (path[0] != '/') {
+        dir_descriptor_t *ret = (dir_descriptor_t*)kmalloc(sizeof(dir_descriptor_t));
+        ret->flags = FILE_NOTFOUND_FLAG;
+        return ret;
+    }
+
     //get the mount point
     mount_point_t *cur_mount_point = &head_mount_point;
     while (path[0] == '/') {
@@ -294,10 +313,6 @@ dir_descriptor_t *fopendir(char *path) {
     return ret;
 }
 
-simple_return_t freaddir(dir_descriptor_t *dd) {
-    return dd->fs->readdir(dd->fs_data);
-}
-
 int fclosedir(dir_descriptor_t *dd) {
     return dd->fs->closedir(dd->fs_data);
 }
@@ -312,4 +327,8 @@ size_t ftell(file_descriptor_t *fd) {
 
 int fstat(file_descriptor_t *fd, stat_t *statbuf) {
     return fd->fs->stat(fd->fs_data, statbuf);
+}
+
+dirent_t *fgetdent(dirent_t *buf, uint32_t entry_num, dir_descriptor_t *fd) {
+    return fd->fs->getdent(buf, entry_num, fd->fs_data);
 }

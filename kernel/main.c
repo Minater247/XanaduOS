@@ -33,6 +33,7 @@ int some_process() {
 
 
 void kernel_main() {
+	asm volatile ("cli");
 
 	boot_initialize();
 
@@ -40,7 +41,19 @@ void kernel_main() {
 	fopen("/dev/trm", "r+"); // stdout
 	fopen("/dev/trm", "r+"); // stderr
 
+	dir_descriptor_t *root = fopendir("/mnt/ramdisk/");
+	uint32_t nent = 0;
+	dirent_t entry;
+	dirent_t *returned = fgetdent(&entry, nent++, root);
+	while (returned != NULL) {
+		terminal_printf("%s\n", entry.name);
+		returned = fgetdent(&entry, nent++, root);
+	}
+
+	asm volatile ("sti");
+
 	process_t *new_process = process_load_elf("/mnt/ramdisk/bin/xansh.elf");
+	terminal_printf("Process loaded with PID %d\n", new_process->pid);
 
 	while (new_process->status != TASK_STATUS_FINISHED) {}
 	terminal_printf("\nProcess finished with code 0x%x\n", new_process->entry_or_return);

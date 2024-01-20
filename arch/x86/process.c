@@ -161,8 +161,6 @@ void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
         }
     }
 
-    serial_printf("SCHEDULE: %d -> %d\n", old_process->pid, new_process->pid);
-
     current_process = new_process;
 
     switch_page_directory(new_process->pd);
@@ -177,12 +175,10 @@ void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
         asm volatile ("sti");
         //set the function up as an function returning an int
         int (*entry_ptr)(int, char*[]) = (int (*)(int, char*[]))new_process->entry_or_return;
-        serial_printf("Starting process.\n");
         //call the function
-        int return_code = entry_ptr(0xDEADBEEF, 0xFE2004AF);
+        int return_code = entry_ptr(0xDEADBEEF, (char **)0xFE2004AF);
         asm volatile ("cli");
         new_process->entry_or_return = return_code;
-        serial_printf("Process %d returned with code 0x%x\n", new_process->pid, return_code);
         //remove the process from the scheduler
         free_process(new_process);
         kpanic("Something went wrong with the scheduler!");

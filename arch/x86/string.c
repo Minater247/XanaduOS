@@ -116,3 +116,11 @@ size_t strlen(const char *str)
         len++;
     return len;
 }
+
+//strncpy
+char *strncpy(char *destination, const char *source, size_t num) {
+    for (size_t i = 0; i < num; i++) {
+        destination[i] = source[i];
+    }
+    return destination;
+}
