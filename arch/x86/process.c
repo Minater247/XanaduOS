@@ -42,6 +42,7 @@ void serial_dump_process() {
 }
 
 extern uint32_t stack_top;
+extern uint32_t stack_top;
 void process_initialize()
 {
     head_process = &kernel_process;
@@ -73,6 +74,7 @@ process_t *create_task(void *entry_point, uint32_t stack_size, page_directory_t 
     new_process->status = TASK_STATUS_INITIALIZED;
     new_process->esp = (uint32_t)stack;
     new_process->ebp = (uint32_t)stack;
+    new_process->stack_pos = stack; //static location of the stack top in memory
     new_process->stack_pos = stack; //static location of the stack top in memory
     new_process->stack_size = stack_size;
     memset(new_process->fds, 0, sizeof(new_process->fds));
@@ -181,6 +183,8 @@ void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
 
     asm volatile ("xchg %bx, %bx");
 
+    asm volatile ("xchg %bx, %bx");
+
 	if (old_process->status == TASK_STATUS_RUNNING)
 	{
         // Already running, so save context
@@ -193,6 +197,7 @@ void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
     {
         new_process = head_process; // If we ran off the end of the list, go back to the beginning
     }
+    while (new_process->status != TASK_STATUS_RUNNING && new_process->status != TASK_STATUS_INITIALIZED && new_process->status != TASK_STATUS_FORKED)
     while (new_process->status != TASK_STATUS_RUNNING && new_process->status != TASK_STATUS_INITIALIZED && new_process->status != TASK_STATUS_FORKED)
     {
         new_process = new_process->next;
@@ -224,6 +229,14 @@ void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
         //remove the process from the scheduler
         free_process(new_process);
         kpanic("Something went wrong with the scheduler!");
+	} else if (new_process->status == TASK_STATUS_FORKED) {
+        // We're just returning to the parent process' address, so set esp/ebp and jump to entry
+        new_process->status = TASK_STATUS_RUNNING;
+        asm volatile ("mov %0, %%esp" : : "r" (new_process->esp));
+        asm volatile ("mov %0, %%ebp" : : "r" (new_process->ebp));
+        asm volatile ("sti");
+        //jump to the address
+        asm volatile ("jmp *%0" : : "r" (new_process->entry_or_return));
 	} else if (new_process->status == TASK_STATUS_FORKED) {
         // We're just returning to the parent process' address, so set esp/ebp and jump to entry
         new_process->status = TASK_STATUS_RUNNING;
