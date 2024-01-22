@@ -52,6 +52,15 @@ void kernel_main() {
 
 	asm volatile ("sti");
 
+	uint32_t pid = fork();
+
+	if (pid == 0) {
+		terminal_printf("Hello from child!\n");
+		while (true);
+	} else {
+		terminal_printf("Hello from parent!\n");
+	}
+
 	process_t *new_process = process_load_elf("/mnt/ramdisk/bin/xansh.elf");
 	terminal_printf("Process loaded with PID %d\n", new_process->pid);
 

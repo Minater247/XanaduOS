@@ -41,6 +41,7 @@ void serial_dump_process() {
     }
 }
 
+extern uint32_t stack_top;
 void process_initialize()
 {
     head_process = &kernel_process;
@@ -50,6 +51,9 @@ void process_initialize()
     head_process->max_fds = 256;
     head_process->pd = &kernel_pd;
     head_process->status = TASK_STATUS_RUNNING;
+    head_process->ebp = (uint32_t)&stack_top;
+    head_process->stack_pos = (uint32_t)&stack_top;
+    head_process->stack_size = 0x4000;
     memset(head_process->fds, 0, sizeof(head_process->fds));
     current_process = head_process;
 }
@@ -69,7 +73,7 @@ process_t *create_task(void *entry_point, uint32_t stack_size, page_directory_t 
     new_process->status = TASK_STATUS_INITIALIZED;
     new_process->esp = (uint32_t)stack;
     new_process->ebp = (uint32_t)stack;
-    new_process->stack_pos = stack;
+    new_process->stack_pos = stack; //static location of the stack top in memory
     new_process->stack_size = stack_size;
     memset(new_process->fds, 0, sizeof(new_process->fds));
     for (int i = 0; i < 256; i++) {
@@ -90,6 +94,38 @@ process_t *create_task(void *entry_point, uint32_t stack_size, page_directory_t 
     new_process->entry_or_return = (uint32_t)entry_point;
 
     return new_process;
+}
+
+extern uint32_t read_eip();
+uint32_t fork() {
+    asm volatile ("cli");
+
+    process_t *new_process = create_task(NULL, current_process->stack_size, clone_page_directory(current_pd));
+
+    new_process->status = TASK_STATUS_FORKED;
+
+    process_t *parent_process = current_process;
+
+    uint32_t eip = read_eip();
+
+    uint32_t esp, ebp;
+    asm volatile ("mov %%esp, %0" : "=r" (esp));
+    asm volatile ("mov %%ebp, %0" : "=r" (ebp));
+
+    if (current_process == parent_process) {
+
+        //copy the stack from the current process and update pointers
+        memcpy((void *)(new_process->stack_pos - current_process->stack_size), (void *)(parent_process->stack_pos - current_process->stack_size), current_process->stack_size);
+
+        new_process->esp = new_process->stack_pos - (parent_process->stack_pos - esp);
+        new_process->ebp = new_process->esp + (ebp - esp);
+
+        new_process->entry_or_return = eip;
+        asm volatile ("sti");
+        return new_process->pid;
+    } else {
+        return 0;
+    }
 }
 
 void free_process(process_t *process) {
@@ -142,6 +178,8 @@ void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
 
 	process_t *old_process = current_process;
 
+    asm volatile ("xchg %bx, %bx");
+
 	if (old_process->status == TASK_STATUS_RUNNING)
 	{
         // Already running, so save context
@@ -154,7 +192,7 @@ void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
     {
         new_process = head_process; // If we ran off the end of the list, go back to the beginning
     }
-    while (new_process->status != TASK_STATUS_RUNNING && new_process->status != TASK_STATUS_INITIALIZED)
+    while (new_process->status != TASK_STATUS_RUNNING && new_process->status != TASK_STATUS_INITIALIZED && new_process->status != TASK_STATUS_FORKED)
     {
         new_process = new_process->next;
         if (new_process == NULL)
@@ -165,7 +203,8 @@ void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
 
     current_process = new_process;
 
-    switch_page_directory(new_process->pd);
+    asm volatile ("mov %0, %%cr3" : : "r" (new_process->pd->phys_addr));
+    current_pd = new_process->pd;
 
 	if (new_process->status == TASK_STATUS_INITIALIZED)
 	{
@@ -184,7 +223,15 @@ void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
         //remove the process from the scheduler
         free_process(new_process);
         kpanic("Something went wrong with the scheduler!");
-	}
+	} else if (new_process->status == TASK_STATUS_FORKED) {
+        // We're just returning to the parent process' address, so set esp/ebp and jump to entry
+        new_process->status = TASK_STATUS_RUNNING;
+        asm volatile ("mov %0, %%esp" : : "r" (new_process->esp));
+        asm volatile ("mov %0, %%ebp" : : "r" (new_process->ebp));
+        asm volatile ("sti");
+        //jump to the address
+        asm volatile ("jmp *%0" : : "r" (new_process->entry_or_return));
+    }
 
     // Otherwise, we're already running, so just restore context and return
 	jump_to_program(new_process->esp, new_process->ebp);
