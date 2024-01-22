@@ -26,6 +26,7 @@ typedef struct process {
 #define TASK_STATUS_WAITING 2
 #define TASK_STATUS_STOPPED 3
 #define TASK_STATUS_FINISHED 4
+#define TASK_STATUS_FORKED 5
 
 void process_initialize();
 process_t *process_load_elf(char *path);

@@ -23,3 +23,8 @@ jump_to_program:
 
     sti
     iret
+
+.globl read_eip
+read_eip:
+    movl (%esp), %eax
+    ret
