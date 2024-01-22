@@ -41,15 +41,6 @@ void kernel_main() {
 	fopen("/dev/trm", "r+"); // stdout
 	fopen("/dev/trm", "r+"); // stderr
 
-	dir_descriptor_t *root = fopendir("/mnt/ramdisk/");
-	uint32_t nent = 0;
-	dirent_t entry;
-	dirent_t *returned = fgetdent(&entry, nent++, root);
-	while (returned != NULL) {
-		terminal_printf("%s\n", entry.name);
-		returned = fgetdent(&entry, nent++, root);
-	}
-
 	asm volatile ("sti");
 
 	uint32_t pid = fork();
@@ -67,24 +58,16 @@ void kernel_main() {
 	while (new_process->status != TASK_STATUS_FINISHED) {}
 	terminal_printf("\nProcess finished with code 0x%x\n", new_process->entry_or_return);
 
-	// create_task(&print_stuff, 0x1000);
-	// create_task(&print_more, 0x1000);
-
-	// while (true) {
-	// 	terminal_printf("B");
-	// }
-
-	while (true);
+	terminal_printf("Kernel is finished running. Press q to page fault!\n");
 
     char buf;
 	file_descriptor_t *kbd = stdin;
 	while (true) {
 		int read = fread(&buf, 1, 1, kbd);
-		if (read != 0)
-		{
-			terminal_putchar(buf);
+		if (read != 0) {
+			if (buf == 'q') {
+				terminal_printf("%c", *(char *)0xA0000000);
+			}
 		}
 	}
-
-	while (true);
 }

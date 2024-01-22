@@ -10,6 +10,8 @@
 #include "inc_c/hardware.h"
 #include "../../kernel/include/errors.h"
 #include "inc_c/syscall.h"
+#include "inc_c/process.h"
+#include "inc_c/serial.h"
 
 gdt_entry_t gdt[5];
 gdt_ptr_t   gdt_ptr;
@@ -194,6 +196,7 @@ char *exception_messages[] = {
     "Reserved"
 };
 
+extern process_t *current_process;
 void page_fault_error(regs_t *r) {
     //later on we will do some code elsewhere to see if this is actually an error (swapping pages, copy on write etc)
     //but for now, we will just print out information about the page fault
@@ -201,7 +204,20 @@ void page_fault_error(regs_t *r) {
     asm volatile("mov %%cr2, %0" : "=r" (faulting_address));
     uint32_t flags = r->err_code;
 
-    kpanic("Page fault! (%s%s%s%s%s) at 0x%x\n", (flags & 0x1) ? "Present |" : "Not present |", (flags & 0x2) ? "Write |" : "Read |", (flags & 0x4) ? "User |" : "Supervisor |", (flags & 0x8) ? "Reserved bit set |" : "", (flags & 0x10) ? "Instruction fetch" : "", faulting_address);
+    if (current_process->pid == 0) {
+        kpanic("Page fault! (%s%s%s%s%s) at 0x%x\n", (flags & 0x1) ? "Present |" : "Not present |", (flags & 0x2) ? "Write |" : "Read |", (flags & 0x4) ? "User |" : "Supervisor |", (flags & 0x8) ? "Reserved bit set |" : "", (flags & 0x10) ? "Instruction fetch" : "", faulting_address);
+    } else {
+        serial_printf("Process %d page fault! (%s%s%s%s%s) at 0x%x\n", current_process->pid, (flags & 0x1) ? "Present |" : "Not present |", (flags & 0x2) ? "Write |" : "Read |", (flags & 0x4) ? "User |" : "Supervisor |", (flags & 0x8) ? "Reserved bit set |" : "", (flags & 0x10) ? "Instruction fetch" : "", faulting_address);
+    }
+    
+    asm volatile (
+        "movl $60, %%eax \n\t"
+        "movl $1, %%ebx \n\t"
+        "int $0x80 \n\t"
+        :
+        :
+        : "%eax", "%ebx"
+    );
 }
 
 void isr_handler(regs_t *r) {

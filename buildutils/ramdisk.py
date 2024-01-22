@@ -132,12 +132,7 @@ def main(argv):
             # This is a directory
             ramdisk.extend(struct.pack("<H", 0x7EAB)) # 2 bytes
             # Find the number of files within this level of the tree
-            num_files = 0
-            for j in range(i + 1, len(order)):
-                if order[j].startswith(order[i]):
-                    num_files += 1
-                else:
-                    break
+            num_files = len(os.listdir(os.path.join(directory, order[i])))
             ramdisk.extend(struct.pack("<I", num_files)) # 4 bytes
             # 64-byte name (including null terminator)
             sent_name = order[i]
@@ -150,7 +145,7 @@ def main(argv):
                 print("Error: Directory name {} is too long.".format(sent_name))
                 return 1
             ramdisk.extend(sent_name.encode("ascii")) # 64 bytes
-            ramdisk.extend(b"\x00" * (64 - len(sent_name))) # - - - why + 1? idk. Does it fix it? yes.
+            ramdisk.extend(b"\x00" * (64 - len(sent_name)))
             # Number of blocks contained
             ramdisk.extend(struct.pack("<I", header_sz_dict[order[i]])) # 4 bytes
             # Reserved through 80 bytes

@@ -151,6 +151,7 @@ void free_process(process_t *process) {
     process->status = TASK_STATUS_FINISHED;
 
     //We leave it up to the creator of the process to free the process struct itself
+    //This way, when a process ends, the return status is still available.
 
     asm volatile ("sti");
 
@@ -171,6 +172,8 @@ process_t *process_by_pid(int pid) {
     return NULL;
 }
 
+
+extern int init_program(uint32_t argc, char** argv, char **envp, void* entry_point);
 extern void jump_to_program(uint32_t esp, uint32_t ebp);
 
 void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
@@ -214,9 +217,7 @@ void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
         asm volatile ("mov %0, %%ebp" : : "r" (new_process->ebp));
         asm volatile ("sti");
         //set the function up as an function returning an int
-        int (*entry_ptr)(int, char*[]) = (int (*)(int, char*[]))new_process->entry_or_return;
-        //call the function
-        int return_code = entry_ptr(0xDEADBEEF, (char **)0xFE2004AF);
+        int return_code = init_program(0xDEADBEEF, (char **)0xFE2004AF, (char **)0xFF00FE0F, (void *)new_process->entry_or_return);
         asm volatile ("cli");
         new_process->entry_or_return = return_code;
         //remove the process from the scheduler

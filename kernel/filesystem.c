@@ -269,6 +269,14 @@ int fclose(file_descriptor_t *fd) {
         return 0;
     }
 
+    if ((int)fd == -1) {
+        return 0;
+    }
+
+    if (fd->flags & FILE_ISOPENDIR_FLAG) {
+        return fclosedir((dir_descriptor_t *)fd);
+    }
+
     if (!(fd->flags & FILE_ISOPEN_FLAG)) {
         return 0;
     }
