@@ -10,6 +10,7 @@
 #include "inc_c/arch_elf.h"
 #include "../../kernel/include/errors.h"
 #include "inc_c/io.h"
+#include "inc_c/string.h"
 
 process_t *head_process = NULL;
 process_t *current_process = NULL;
@@ -58,7 +59,7 @@ void process_initialize()
     current_process = head_process;
 }
 
-process_t *create_task(void *entry_point, uint32_t stack_size, page_directory_t *pd) {
+process_t *create_task(void *entry_point, uint32_t stack_size, page_directory_t *pd, int argc, char **argv, char **envp) {
     process_t *new_process = (process_t *)kmalloc(sizeof(process_t));
 
     asm volatile ("cli");
@@ -75,6 +76,9 @@ process_t *create_task(void *entry_point, uint32_t stack_size, page_directory_t 
     new_process->ebp = (uint32_t)stack;
     new_process->stack_pos = stack; //static location of the stack top in memory
     new_process->stack_size = stack_size;
+    new_process->argc = argc;
+    new_process->argv = argv;
+    new_process->envp = envp;
     memset(new_process->fds, 0, sizeof(new_process->fds));
     for (int i = 0; i < 256; i++) {
         if (current_process->fds[i] != NULL) {
@@ -100,7 +104,7 @@ extern uint32_t read_eip();
 uint32_t fork() {
     asm volatile ("cli");
 
-    process_t *new_process = create_task(NULL, current_process->stack_size, clone_page_directory(current_pd));
+    process_t *new_process = create_task(NULL, current_process->stack_size, clone_page_directory(current_pd), 0, 0, 0);
 
     new_process->status = TASK_STATUS_FORKED;
 
@@ -212,12 +216,62 @@ void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
 	{
 		new_process->status = TASK_STATUS_RUNNING;
         // First time running, so set up stack and jump to entry point
+        uint32_t stack = new_process->stack_pos;
+        if (new_process->argv != NULL) {
+            uint32_t argc = 0;
+            uint32_t argv_size = 0;
+            argc = 0;
+            while (new_process->argv[argc] != NULL) {
+                argv_size += strlen(new_process->argv[argc]) + 1;
+                argc++;
+            }
+
+            stack -= (argc + 1) * sizeof(char *); // argv + NULL
+            char **new_argv = (char **)stack;
+            stack -= argv_size; // argv strings
+            uint32_t new_argv_pos = stack;
+            //copy the arguments
+            for (uint32_t i = 0; i < argc; i++) {
+                new_argv[i] = (char *)new_argv_pos;
+                strcpy((char *)new_argv_pos, new_process->argv[i]);
+                new_argv_pos += strlen(new_process->argv[i]) + 1;
+            }
+            new_argv[argc] = NULL;
+            new_process->argv = new_argv;
+        }
+        if (new_process->envp != NULL) {
+            uint32_t envp_size = 0;
+            uint32_t envc = 0;
+            if (new_process->envp != NULL) {
+                while (new_process->envp[envc] != NULL) {
+                    envp_size += strlen(new_process->envp[envc]) + 1;
+                    envc++;
+                }
+            }
+
+            stack -= (envc + 1) * sizeof(char *); // envp + NULL
+            char **new_envp = (char **)stack;
+            stack -= envp_size; // envp strings
+            uint32_t new_envp_pos = stack;
+
+            //copy the environment
+            for (uint32_t i = 0; i < envc; i++) {
+                new_envp[i] = (char *)new_envp_pos;
+                strcpy((char *)new_envp_pos, new_process->envp[i]);
+                new_envp_pos += strlen(new_process->envp[i]) + 1;
+            }
+            new_envp[envc] = NULL;
+            new_process->envp = new_envp;
+        }
+
+        //adjust the new process' esp
+        new_process->esp = stack;
 
         asm volatile ("mov %0, %%esp" : : "r" (new_process->esp));
         asm volatile ("mov %0, %%ebp" : : "r" (new_process->ebp));
         asm volatile ("sti");
         //set the function up as an function returning an int
-        int return_code = init_program(0xDEADBEEF, (char **)0xFE2004AF, (char **)0xFF00FE0F, (void *)new_process->entry_or_return);
+        int return_code = init_program(new_process->argc, new_process->argv, new_process->envp, (void *)new_process->entry_or_return);
         asm volatile ("cli");
         new_process->entry_or_return = return_code;
         //remove the process from the scheduler
@@ -239,6 +293,8 @@ void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
 	kpanic("Something went wrong with the scheduler!");
 }
 
+
+char *test_argv[] = {"Hello", "World", NULL};
 
 process_t *process_load_elf(char *path) {
 	file_descriptor_t *fd = fopen(path, "r");
@@ -278,7 +334,7 @@ process_t *process_load_elf(char *path) {
 	kfree(elfbuf);
 
 
-    process_t *new_process = create_task((void *)loaded.entry_point, 0x1000, loaded.pd);
+    process_t *new_process = create_task((void *)loaded.entry_point, 0x1000, loaded.pd, 2, test_argv, NULL);
 
     asm volatile ("sti");
     

@@ -19,6 +19,11 @@ typedef struct process {
     uint32_t max_fds;
     struct process *next;
     page_directory_t *pd;
+
+    // Things to pass to the process
+    int argc;
+    char **argv;
+    char **envp;
 } process_t;
 
 #define TASK_STATUS_INITIALIZED 0
@@ -30,7 +35,7 @@ typedef struct process {
 
 void process_initialize();
 process_t *process_load_elf(char *path);
-process_t *create_task(void *entry_point, uint32_t stack_size, page_directory_t *pd);
+process_t *create_task(void *entry_point, uint32_t stack_size, page_directory_t *pd, int argc, char **argv, char **envp);
 void free_process(process_t *process);
 uint32_t fork();
 

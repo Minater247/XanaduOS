@@ -124,3 +124,14 @@ char *strncpy(char *destination, const char *source, size_t num) {
     }
     return destination;
 }
+
+//strcpy
+char *strcpy(char *destination, const char *source) {
+    size_t i = 0;
+    while (source[i]) {
+        destination[i] = source[i];
+        i++;
+    }
+    destination[i] = '\0';
+    return destination;
+}

@@ -39,7 +39,7 @@ device_file_t *dopen(char *path, char *flags) {
         if (strlen(current_device->name) == path_length && strncmp(current_device->name, path, path_length) == 0) {
             //if we found a device, allocate a device_file_t and return it
             device_file_t *ret = (device_file_t *)kmalloc(sizeof(device_file_t));
-            ret->flags = FILE_ISFILE_FLAG | FILE_ISOPEN_FLAG;
+            ret->flags = FILE_ISFILE_FLAG | FILE_ISOPEN_FLAG | current_device->flags;
             ret->device = current_device;
 
             if (flags[0] == 'r') {
