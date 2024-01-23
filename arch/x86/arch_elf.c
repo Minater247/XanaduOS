@@ -66,7 +66,7 @@ elf_load_result_t elf_load_executable(void *elf_file) {
             bool is_writable = program_header->p_flags & PF_W;
             for (uint32_t i = 0; i < num_pages; i++) {
                 page_table_entry_t first_free = first_free_page();
-                alloc_page_kmalloc(aligned_vaddr + (i * 0x1000), (first_free.pd_entry * 0x400000) + (first_free.pt_entry * 0x1000), true, true, is_writable);
+                alloc_page_kmalloc(aligned_vaddr + (i * 0x1000), (first_free.pd_entry * 0x400000) + (first_free.pt_entry * 0x1000), true, false, is_writable);
             }
 
             //copy the section into memory

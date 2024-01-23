@@ -10,7 +10,7 @@
 #include "../../kernel/include/errors.h"
 
 void syscall_handler(regs_t *regs) {
-    //serial_printf("Syscall: 0x%x\n", regs->eax);
+    serial_printf("Syscall: 0x%x\n", regs->eax);
 
     file_descriptor_t *fd;
 
@@ -82,7 +82,7 @@ void syscall_handler(regs_t *regs) {
             break;
     };
 
-    //serial_printf("Returning from syscall.\n");
+    serial_printf("Returning from syscall.\n");
 
     return;
 }
