@@ -399,6 +399,40 @@ void alloc_page_kmalloc(uint32_t virt, uint32_t phys, bool make, bool is_kernel,
     return;
 }
 
+void free_page(uint32_t virt) {
+    //get the page directory entry
+    uint32_t pd_entry = virt >> 22;
+    uint32_t pt_entry = (virt >> 12) & 0x3FF;
+
+    //check if the page is already in use
+    if (current_pd->virt[pd_entry] == 0) {
+        kpanic("Attempted to free non-allocated page directory!");
+    }
+    if (!((*(page_table_t *)(current_pd->virt[pd_entry])).pt_entry[pt_entry] & 0x1)) {
+        kpanic("Attempted to free non-allocated page!");
+    }
+
+    //set the page table entry
+    ((page_table_t *)(current_pd->virt[pd_entry]))->pt_entry[pt_entry] = 0;
+
+    //set the bitmap
+    uint32_t phys = ((page_table_t *)(current_pd->virt[pd_entry]))->pt_entry[pt_entry] & 0xFFFFF000;
+    uint32_t phys_pd_entry = phys >> 22;
+    uint32_t phys_pt_entry = (phys >> 12) & 0x3FF;
+    page_directory_bitmaps[phys_pd_entry]->bitmap[phys_pt_entry / 32] &= ~(1 << (phys_pt_entry % 32));
+
+    //check if the page directory entry is full
+    for (uint32_t i = 0; i < 32; i++) {
+        if (page_directory_bitmaps[phys_pd_entry]->bitmap[i] != 0) {
+            current_pd->is_full[phys_pd_entry] = false;
+            return;
+        }
+    }
+    //the page directory entry is full
+    current_pd->is_full[phys_pd_entry] = true;
+    return;
+}
+
 
 void heap_expand() {
     //expand the heap by 1MB (1024 pages)
@@ -438,6 +472,18 @@ void heap_dump()
         serial_printf("@ 0x%x, length: %x, free: %s\n", header, header->length, header->free ? "true" : "false");
         serial_printf("Contents: 0x%x\n", *(uint32_t *)((uint32_t)header + sizeof(heap_header_t)));
         serial_printf("Next: 0x%x\n", header->next);
+    }
+}
+
+uint32_t virt_to_phys(uint32_t virt)
+{
+    uint32_t pd_entry = virt >> 22;
+    uint32_t pt_entry = (virt >> 12) & 0x3FF;
+    if (current_pd->virt[pd_entry] == 0)
+    {
+        return 1; //all other results will be page-aligned, so a non-page-aligned result means it's not mapped
+    } else {
+        return ((page_table_t *)current_pd->virt[pd_entry])->pt_entry[pt_entry] & 0xFFFFF000;
     }
 }
 

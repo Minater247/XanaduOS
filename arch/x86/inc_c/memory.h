@@ -57,5 +57,7 @@ void alloc_page_kmalloc(uint32_t virt, uint32_t phys, bool make, bool is_kernel,
 page_directory_t *clone_page_directory(page_directory_t *directory);
 void switch_page_directory(page_directory_t *directory);
 void free_page_directory(page_directory_t *directory);
+uint32_t virt_to_phys(uint32_t virt);
+void free_page(uint32_t virt);
 
 #endif

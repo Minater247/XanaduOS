@@ -9,6 +9,7 @@
 #include "inc_c/arch_elf.h"
 #include "inc_c/process.h"
 #include "include/errors.h"
+#include "inc_c/serial.h"
 
 //temp
 #include "../arch/x86/drivers/keyboard.h"
