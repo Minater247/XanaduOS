@@ -38,8 +38,6 @@ void kernel_main() {
 
 	boot_initialize();
 
-	serial_printf("*********** BOOTED ***********\n");
-
 	fopen("/dev/kbd0", "r"); // stdin
 	fopen("/dev/trm", "r+"); // stdout
 	fopen("/dev/trm", "r+"); // stderr

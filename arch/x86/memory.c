@@ -351,7 +351,7 @@ void alloc_page(uint32_t virt, uint32_t phys, bool make, bool is_kernel, bool is
     return;
 }
 
-void alloc_page_kmalloc(uint32_t virt, uint32_t phys, bool make, bool is_kernel, bool is_writeable) {
+void alloc_page_kmalloc(uint32_t virt, uint32_t phys, bool make, bool is_kernel, bool is_writeable, page_directory_t *pd) {
     //get the page directory entry
     uint32_t pd_entry = virt >> 22;
     uint32_t pt_entry = (virt >> 12) & 0x3FF;
@@ -359,30 +359,30 @@ void alloc_page_kmalloc(uint32_t virt, uint32_t phys, bool make, bool is_kernel,
     phys &= 0xFFFFF000; //make sure the physical address is page-aligned
 
     //check if the page is already in use
-    if (current_pd->virt[pd_entry] == 0 && make) {
+    if (pd->virt[pd_entry] == 0 && make) {
         uint32_t phys;
-        current_pd->virt[pd_entry] = (uint32_t)kmalloc_ap(0x1000, &phys);
-        current_pd->entries[pd_entry] = phys | 0x1;
+        pd->virt[pd_entry] = (uint32_t)kmalloc_ap(0x1000, &phys);
+        pd->entries[pd_entry] = phys | 0x1;
         if (!is_kernel) {
-            current_pd->entries[pd_entry] |= 0x4;
+            pd->entries[pd_entry] |= 0x4;
         }
         if (is_writeable) {
-            current_pd->entries[pd_entry] |= 0x2;
+            pd->entries[pd_entry] |= 0x2;
         }
-        current_pd->is_full[pd_entry] = false;
+        pd->is_full[pd_entry] = false;
     }
-    if ((*(page_table_t *)(current_pd->virt[pd_entry])).pt_entry[pt_entry] & 0x1) {
+    if ((*(page_table_t *)(pd->virt[pd_entry])).pt_entry[pt_entry] & 0x1) {
         kpanic("Attempted to allocate already allocated page!");
     }
 
     //set the page table entry
-    ((page_table_t *)(current_pd->virt[pd_entry]))->pt_entry[pt_entry] = phys | 0x3;
+    ((page_table_t *)(pd->virt[pd_entry]))->pt_entry[pt_entry] = phys | 0x3;
 
     uint32_t phys_pd_entry = phys >> 22;
     uint32_t phys_pt_entry = (phys >> 12) & 0x3FF;
     if (page_directory_bitmaps[phys_pd_entry] == NULL) {
         page_directory_bitmaps[phys_pd_entry] = kmalloc(sizeof(bitmap_1024_t));
-        current_pd->is_full[phys_pd_entry] = false;
+        pd->is_full[phys_pd_entry] = false;
     }
 
     //set the bitmap
@@ -395,28 +395,28 @@ void alloc_page_kmalloc(uint32_t virt, uint32_t phys, bool make, bool is_kernel,
         }
     }
     //the page directory entry is full
-    current_pd->is_full[phys_pd_entry] = true;
+    pd->is_full[phys_pd_entry] = true;
     return;
 }
 
-void free_page(uint32_t virt) {
+void free_page(uint32_t virt, page_directory_t *pd) {
     //get the page directory entry
     uint32_t pd_entry = virt >> 22;
     uint32_t pt_entry = (virt >> 12) & 0x3FF;
 
     //check if the page is already in use
-    if (current_pd->virt[pd_entry] == 0) {
+    if (pd->virt[pd_entry] == 0) {
         kpanic("Attempted to free non-allocated page directory!");
     }
-    if (!((*(page_table_t *)(current_pd->virt[pd_entry])).pt_entry[pt_entry] & 0x1)) {
+    if (!((*(page_table_t *)(pd->virt[pd_entry])).pt_entry[pt_entry] & 0x1)) {
         kpanic("Attempted to free non-allocated page!");
     }
 
     //set the page table entry
-    ((page_table_t *)(current_pd->virt[pd_entry]))->pt_entry[pt_entry] = 0;
+    ((page_table_t *)(pd->virt[pd_entry]))->pt_entry[pt_entry] = 0;
 
     //set the bitmap
-    uint32_t phys = ((page_table_t *)(current_pd->virt[pd_entry]))->pt_entry[pt_entry] & 0xFFFFF000;
+    uint32_t phys = ((page_table_t *)(pd->virt[pd_entry]))->pt_entry[pt_entry] & 0xFFFFF000;
     uint32_t phys_pd_entry = phys >> 22;
     uint32_t phys_pt_entry = (phys >> 12) & 0x3FF;
     page_directory_bitmaps[phys_pd_entry]->bitmap[phys_pt_entry / 32] &= ~(1 << (phys_pt_entry % 32));
@@ -424,12 +424,12 @@ void free_page(uint32_t virt) {
     //check if the page directory entry is full
     for (uint32_t i = 0; i < 32; i++) {
         if (page_directory_bitmaps[phys_pd_entry]->bitmap[i] != 0) {
-            current_pd->is_full[phys_pd_entry] = false;
+            pd->is_full[phys_pd_entry] = false;
             return;
         }
     }
     //the page directory entry is full
-    current_pd->is_full[phys_pd_entry] = true;
+    pd->is_full[phys_pd_entry] = true;
     return;
 }
 

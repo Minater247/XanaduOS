@@ -338,12 +338,16 @@ void boot_initialize() {
 
     memory_initialize(mboot_info);
 
+	serial_printf("*********** BOOTED ***********\n");
+
 	process_initialize();
 
     ramdisk_initialize(mboot_info);
     devices_initialize();
 
     terminal_register_device();
+
+    serial_printf("*********** INITIALIZED ***********\n");
 
     asm volatile("sti");
 }
