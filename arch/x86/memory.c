@@ -89,9 +89,7 @@ void memory_initialize(multiboot_info_t *mboot_info)
     memset(page_directory_bitmaps[1]->bitmap, 0xFF, sizeof(page_directory_bitmaps[1]->bitmap));
 
     //set up the kernel page table
-    memset(kernel_pd.entries, 0, sizeof(kernel_pd.entries));
-    memset(kernel_pd.virt, 0, sizeof(kernel_pd.virt));
-    memset(kernel_pd.is_full, 0, sizeof(kernel_pd.is_full));
+    memset(&kernel_pd, 0, sizeof(page_directory_t));
     //Presently set entries will be 0x300 -> 0 and 0x301 -> 0x400000
     uint32_t phys;
     page_table_t *new_map = (page_table_t *)kmalloc_ap(sizeof(page_table_t), &phys);
@@ -228,7 +226,7 @@ void phys_copypage(uint32_t src, uint32_t dest) {
     ((page_table_t *)current_pd->virt[0x3FF])->pt_entry[1022] = (src & 0xFFFFF000) | 0x3;
     ((page_table_t *)current_pd->virt[0x3FF])->pt_entry[1023] = (dest & 0xFFFFF000) | 0x3;
     
-    memcpy((void *)0xFFFFE000, (void *)0xFFFFF000, 4096);
+    memcpy((void *)0xFFFFF000, (void *)0xFFFFE000, 4096);
 }
 
 
@@ -475,15 +473,20 @@ void heap_dump()
     }
 }
 
-uint32_t virt_to_phys(uint32_t virt)
+uint32_t virt_to_phys(uint32_t virt, page_directory_t *pd)
 {
     uint32_t pd_entry = virt >> 22;
     uint32_t pt_entry = (virt >> 12) & 0x3FF;
-    if (current_pd->virt[pd_entry] == 0)
+
+    serial_printf("Looking for page 0x%x, %x\n", pd_entry, pt_entry);
+
+    if (pd->virt[pd_entry] == 0)
     {
+        serial_printf("Page directory entry is 0\n");
         return 1; //all other results will be page-aligned, so a non-page-aligned result means it's not mapped
     } else {
-        return ((page_table_t *)current_pd->virt[pd_entry])->pt_entry[pt_entry] & 0xFFFFF000;
+        serial_printf("Page directory entry is 0x%x\n", pd->virt[pd_entry]);
+        return ((page_table_t *)pd->virt[pd_entry])->pt_entry[pt_entry] & 0xFFFFF000;
     }
 }
 

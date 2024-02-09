@@ -64,7 +64,25 @@ process_t *create_task(void *entry_point, uint32_t stack_size, page_directory_t 
 
     asm volatile ("cli");
 
-    uint32_t stack = (uint32_t)kmalloc(stack_size) + stack_size;
+    //uint32_t stack = (uint32_t)kmalloc(stack_size) + stack_size;
+
+    if (current_process->pid != 0) {
+        //free the previous stack's pages
+        for (uint32_t i = 0; i < current_process->stack_size; i += 0x1000) {
+            serial_printf("Will free page 0x%x (0x%x)\n", current_process->stack_pos - i, virt_to_phys(current_process->stack_pos - i, pd));
+            free_page(virt_to_phys(current_process->stack_pos - i, pd), pd);
+        }
+    }
+
+    uint32_t stack = 0xC0000000 - stack_size;
+    for (uint32_t i = 0; i < stack_size; i += 0x1000) {
+        page_table_entry_t first = first_free_page();
+        alloc_page_kmalloc(stack + i, first.pd_entry * 0x400000 + first.pt_entry * 0x1000, true, false, true, pd);
+        terminal_printf("Will use page 0x%x (0x%x)\n", stack + i, virt_to_phys(stack + i, pd));
+    }
+    terminal_printf("PD location: 0x%x\n", pd);
+    terminal_printf("(size 0x%x)\n", stack_size);
+    stack = 0xC0000000;
 
     new_process->pid = next_pid++;
     new_process->next = NULL;
@@ -112,6 +130,8 @@ uint32_t fork() {
 
     uint32_t eip = read_eip();
 
+    asm volatile ("cli");
+
     uint32_t esp, ebp;
     asm volatile ("mov %%esp, %0" : "=r" (esp));
     asm volatile ("mov %%ebp, %0" : "=r" (ebp));
@@ -120,7 +140,15 @@ uint32_t fork() {
 
         //copy the stack from the current process and update pointers
         uint32_t old_stack_offset = parent_process->stack_pos - esp;
-        memcpy((void *)(new_process->stack_pos - old_stack_offset), (void *)(parent_process->stack_pos - old_stack_offset), old_stack_offset);
+
+        //copy all pages
+        for (uint32_t i = 0; i < old_stack_offset; i += 0x1000) {
+            serial_printf("Looking in parent 0x%x, child 0x%x\n", parent_process, new_process);
+            uint32_t phys = virt_to_phys(parent_process->stack_pos - old_stack_offset + i, current_pd);
+            uint32_t new_phys = virt_to_phys(new_process->stack_pos - old_stack_offset + i, new_process->pd);
+            terminal_printf("Copying 0x%x to 0x%x\n", phys, new_phys);
+            phys_copypage(phys, new_phys);
+        }
 
         new_process->esp = new_process->stack_pos - old_stack_offset;
         new_process->ebp = new_process->esp + (ebp - esp);
@@ -209,13 +237,18 @@ void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
 
     current_process = new_process;
 
-    asm volatile ("mov %0, %%cr3" : : "r" (new_process->pd->phys_addr));
-    current_pd = new_process->pd;
+    terminal_printf("pswitch %d -> %d\n", old_process->pid, new_process->pid);
+    serial_printf("pswitch %d -> %d\n", old_process->pid, new_process->pid);
+
+    serial_printf("New process status: %d\n", new_process->status);
 
 	if (new_process->status == TASK_STATUS_INITIALIZED)
 	{
 		new_process->status = TASK_STATUS_RUNNING;
         // First time running, so set up stack and jump to entry point
+        serial_printf("First time running process %d\n", new_process->pid);
+        asm volatile ("mov %0, %%cr3" : : "r" (new_process->pd->phys_addr));
+        current_pd = new_process->pd;
         uint32_t stack = new_process->stack_pos;
         if (new_process->argv != NULL) {
             uint32_t argc = 0;
@@ -279,14 +312,29 @@ void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
         kpanic("Something went wrong with the scheduler!");
 	} else if (new_process->status == TASK_STATUS_FORKED) {
         // We're just returning to the parent process' address, so set esp/ebp and jump to entry
+        serial_printf("Returning to forked process %d\n", new_process->pid);
+
+        asm volatile ("mov %0, %%cr3" : : "r" (new_process->pd->phys_addr));
+        current_pd = new_process->pd;
+
         new_process->status = TASK_STATUS_RUNNING;
         asm volatile ("mov %0, %%esp" : : "r" (new_process->esp));
         asm volatile ("mov %0, %%ebp" : : "r" (new_process->ebp));
+
+        serial_printf("On new stack!\n");
+        serial_printf("ESP: 0x%x\n", new_process->esp);
+        serial_printf("EBP: 0x%x\n", new_process->ebp);
+        serial_printf("Will jump to 0x%x\n", new_process->entry_or_return);
+
+        asm volatile ("xchg %bx, %bx");
+
         asm volatile ("sti");
         //jump to the address
         asm volatile ("jmp *%0" : : "r" (new_process->entry_or_return));
     }
 
+    asm volatile ("mov %0, %%cr3" : : "r" (new_process->pd->phys_addr));
+    current_pd = new_process->pd;
     // Otherwise, we're already running, so just restore context and return
 	jump_to_program(new_process->esp, new_process->ebp);
 
