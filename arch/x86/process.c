@@ -157,6 +157,7 @@ uint32_t fork() {
         asm volatile ("sti");
         return new_process->pid;
     } else {
+        asm volatile ("sti");
         return 0;
     }
 }
@@ -237,7 +238,6 @@ void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
 
     current_process = new_process;
 
-    terminal_printf("pswitch %d -> %d\n", old_process->pid, new_process->pid);
     serial_printf("pswitch %d -> %d\n", old_process->pid, new_process->pid);
 
     serial_printf("New process status: %d\n", new_process->status);
@@ -326,8 +326,6 @@ void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
         serial_printf("EBP: 0x%x\n", new_process->ebp);
         serial_printf("Will jump to 0x%x\n", new_process->entry_or_return);
 
-        asm volatile ("xchg %bx, %bx");
-
         asm volatile ("sti");
         //jump to the address
         asm volatile ("jmp *%0" : : "r" (new_process->entry_or_return));
@@ -335,8 +333,13 @@ void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
 
     asm volatile ("mov %0, %%cr3" : : "r" (new_process->pd->phys_addr));
     current_pd = new_process->pd;
-    // Otherwise, we're already running, so just restore context and return
-	jump_to_program(new_process->esp, new_process->ebp);
+
+    asm volatile ("mov %0, %%esp" : : "r" (new_process->esp));
+    asm volatile ("mov %0, %%ebp" : : "r" (new_process->ebp));
+    asm volatile ("popa");
+    asm volatile ("sti");
+    asm volatile ("iret");
+
 
 	kpanic("Something went wrong with the scheduler!");
 }

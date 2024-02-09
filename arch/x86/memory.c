@@ -478,14 +478,10 @@ uint32_t virt_to_phys(uint32_t virt, page_directory_t *pd)
     uint32_t pd_entry = virt >> 22;
     uint32_t pt_entry = (virt >> 12) & 0x3FF;
 
-    serial_printf("Looking for page 0x%x, %x\n", pd_entry, pt_entry);
-
     if (pd->virt[pd_entry] == 0)
     {
-        serial_printf("Page directory entry is 0\n");
         return 1; //all other results will be page-aligned, so a non-page-aligned result means it's not mapped
     } else {
-        serial_printf("Page directory entry is 0x%x\n", pd->virt[pd_entry]);
         return ((page_table_t *)pd->virt[pd_entry])->pt_entry[pt_entry] & 0xFFFFF000;
     }
 }
