@@ -12,5 +12,6 @@
 #define SYSCALL_GETDENT 78
 
 void syscall_handler(regs_t *regs);
+void syscall_initialize();
 
 #endif
