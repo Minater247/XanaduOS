@@ -147,37 +147,11 @@ uint32_t fork() {
         new_process->esp = new_process->stack_pos - old_stack_offset;
         new_process->ebp = new_process->esp + (ebp - esp);
 
-        serial_printf("**** PARENT esp: 0x%x ****\n", esp);
-        for (uint32_t i = 0; i < 11; i++) {
-            serial_printf("0x%x: 0x%x%s\n", virt_to_phys(esp + ((i - 5) * 4), current_pd) + ((esp + ((i - 5) * 4)) & 0xFFF), *(uint32_t *)(esp + ((i - 5) * 4)), (esp + ((i - 5) * 4) == esp) ? " <" : "");
-        }
-
-        serial_printf("**** CHILD esp: 0x%x ****\n", new_process->esp);
-        //we will need to convert esp to phys, then use read_phys_byte to get each byte of the uint32
-        for (uint32_t i = 0; i < 11; i++) {
-            uint32_t phys = virt_to_phys(new_process->esp + ((i - 5) * 4), new_process->pd) + ((new_process->esp + ((i - 5) * 4)) & 0xFFF);
-            uint32_t val = (read_phys_byte(phys)) | (read_phys_byte(phys + 1) << 8) | (read_phys_byte(phys + 2) << 16) | (read_phys_byte(phys + 3) << 24);
-            serial_printf("0x%x: 0x%x%s\n", phys, val, (new_process->esp + ((i - 5) * 4) == new_process->esp) ? " <" : "");
-        }
-
         new_process->entry_or_return = eip;
 
         asm volatile ("sti");
         return new_process->pid;
     } else {
-        //oops, something's wrong.
-        //print the values on the stack around the current esp
-        uint32_t esp;
-        asm volatile ("mov %%esp, %0" : "=r" (esp));
-        serial_printf("**** CHILD (FORKED) esp: 0x%x ****\n", esp);
-        for (uint32_t i = 0; i < 11; i++) {
-            serial_printf("0x%x: 0x%x%s\n", virt_to_phys(esp + ((i - 5) * 4), current_pd) + ((esp + ((i - 5) * 4)) & 0xFFF), *(uint32_t *)(esp + ((i - 5) * 4)), (esp + ((i - 5) * 4) == esp) ? " <" : "");
-        }
-
-        //read the return address from the stack
-        uint32_t return_address = *(uint32_t *)(esp + 4);
-        kassert(return_address != NULL);
-
         asm volatile ("sti");
         return 0;
     }
@@ -334,17 +308,10 @@ void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
         asm volatile ("mov %0, %%cr3" : : "r" (new_process->pd->phys_addr));
         current_pd = new_process->pd;
 
-        //print out 11 values around the esp
-        serial_printf("**** SCHEDULE esp (%d): 0x%x ****\n", new_process->pid, new_process->esp);
-        for (uint32_t i = 0; i < 11; i++) {
-            serial_printf("0x%x: 0x%x%s\n", virt_to_phys(new_process->esp + ((i - 5) * 4), new_process->pd) + ((new_process->esp + ((i - 5) * 4)) & 0xFFF), *(uint32_t *)(new_process->esp + ((i - 5) * 4)), (new_process->esp + ((i - 5) * 4) == new_process->esp) ? " <" : "");
-        }
-
         new_process->status = TASK_STATUS_RUNNING;
         asm volatile ("mov %0, %%esp" : : "r" (new_process->esp));
         asm volatile ("mov %0, %%ebp" : : "r" (new_process->ebp));
         asm volatile ("sti");
-        //jump to the address
         asm volatile ("jmp *%0" : : "r" (new_process->entry_or_return));
     }
 
