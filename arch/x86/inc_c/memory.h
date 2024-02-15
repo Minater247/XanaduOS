@@ -60,5 +60,6 @@ void free_page_directory(page_directory_t *directory);
 uint32_t virt_to_phys(uint32_t virt, page_directory_t *pd);
 void free_page(uint32_t virt, page_directory_t *pd);
 void phys_copypage(uint32_t src, uint32_t dest);
+void serial_dump_page_directory(page_directory_t *pd);
 
 #endif

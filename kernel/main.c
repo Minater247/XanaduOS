@@ -46,13 +46,32 @@ void kernel_main() {
 
 	uint32_t pid = fork();
 
+	terminal_printf("Fork returned %d for PID (f1)%d\n", pid, getpid());
+
 	if (pid == 0) {
 		terminal_printf("Hello from child!\n");
+		terminal_printf("First fork PID is %d\n", getpid());
 		while (true);
 	} else {
 		terminal_printf("Hello from parent!\n");
+		terminal_printf("After fork, PID is %d\n", getpid());
 	}
 
+	//fork again!
+	terminal_printf("prefork PID: %d\n", getpid());
+	pid = fork();
+	terminal_printf("Fork returned %d for PID (f2)%d\n", pid, getpid());
+
+	if (pid == 0) {
+		terminal_printf("Hello from child 2!\n");
+		terminal_printf("Second fork PID is %d\n", getpid());
+		while (true);
+	} else {
+		terminal_printf("Hello from parent 2!\n");
+		terminal_printf("After second fork, PID is %d\n", getpid());
+	}
+
+	asm volatile ("cli");
 	process_t *new_process = process_load_elf("/mnt/ramdisk/bin/xansh.elf");
 	terminal_printf("Process loaded with PID %d\n", new_process->pid);
 

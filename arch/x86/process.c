@@ -25,20 +25,21 @@ extern page_directory_t kernel_pd;   // kernel page directory
 extern page_directory_t *current_pd; // current page directory
 
 void serial_dump_process() {
-    process_t *current_process = head_process;
-    while (current_process != NULL) {
-        serial_printf("Process: 0x%x\n", current_process);
-        serial_printf("  PID: 0x%x\n", current_process->pid);
-        serial_printf("  ESP: 0x%x\n", current_process->esp);
-        serial_printf("  EBP: 0x%x\n", current_process->ebp);
-        serial_printf("  Entry: 0x%x\n", current_process->entry_or_return);
-        serial_printf("  Next: 0x%x\n", current_process->next);
-        serial_printf("  PD: 0x%x\n", current_process->pd);
-        serial_printf("  Status: 0x%x\n", current_process->status);
-        serial_printf("  FDS: 0x%x\n", current_process->fds);
-        serial_printf("  Num FDS: 0x%x\n", current_process->num_fds);
-        serial_printf("  Max FDS: 0x%x\n", current_process->max_fds);
-        current_process = current_process->next;
+    process_t *curr_process = head_process;
+    serial_printf("******** PROCESS DUMP (%d) ********\n", getpid());
+    while (curr_process != NULL) {
+        serial_printf("Process: 0x%x\n", curr_process);
+        serial_printf("  PID: 0x%x\n", curr_process->pid);
+        serial_printf("  ESP: 0x%x\n", curr_process->esp);
+        serial_printf("  EBP: 0x%x\n", curr_process->ebp);
+        serial_printf("  Entry: 0x%x\n", curr_process->entry_or_return);
+        serial_printf("  Next: 0x%x\n", curr_process->next);
+        serial_printf("  PD: 0x%x\n", curr_process->pd);
+        serial_printf("  Status: 0x%x\n", curr_process->status);
+        serial_printf("  FDS: 0x%x\n", curr_process->fds);
+        serial_printf("  Num FDS: 0x%x\n", curr_process->num_fds);
+        serial_printf("  Max FDS: 0x%x\n", curr_process->max_fds);
+        curr_process = curr_process->next;
     }
 }
 
@@ -64,8 +65,6 @@ process_t *create_task(void *entry_point, uint32_t stack_size, page_directory_t 
 
     asm volatile ("cli");
 
-    //uint32_t stack = (uint32_t)kmalloc(stack_size) + stack_size;
-
     if (current_process->pid != 0) {
         //free the previous stack's pages
         for (uint32_t i = 0; i < current_process->stack_size; i += 0x1000) {
@@ -82,7 +81,7 @@ process_t *create_task(void *entry_point, uint32_t stack_size, page_directory_t 
 
     new_process->pid = next_pid++;
     new_process->next = NULL;
-    new_process->num_fds = 0;
+    new_process->num_fds = current_process->num_fds;
     new_process->max_fds = 256;
     new_process->pd = pd;
     new_process->status = TASK_STATUS_INITIALIZED;
@@ -103,11 +102,11 @@ process_t *create_task(void *entry_point, uint32_t stack_size, page_directory_t 
     }
 
     // Add to linked list
-    process_t *current_process = head_process;
-    while (current_process->next != NULL) {
-        current_process = current_process->next;
+    process_t *curr_process = head_process;
+    while (curr_process->next != NULL) {
+        curr_process = curr_process->next;
     }
-    current_process->next = new_process;
+    curr_process->next = new_process;
 
     new_process->entry_or_return = (uint32_t)entry_point;
 
@@ -120,7 +119,7 @@ uint32_t fork() {
 
     process_t *new_process = create_task(NULL, current_process->stack_size, clone_page_directory(current_pd), 0, 0, 0);
 
-    new_process->status = TASK_STATUS_FORKED;
+    new_process->status = TASK_STATUS_FORKED; //don't run yet (set to TASK_STATUS_FORKED when we're ready to run it)
 
     process_t *parent_process = current_process;
 
@@ -128,40 +127,68 @@ uint32_t fork() {
 
     asm volatile ("cli");
 
-    uint32_t esp, ebp;
-    asm volatile ("mov %%esp, %0" : "=r" (esp));
-    asm volatile ("mov %%ebp, %0" : "=r" (ebp));
-
     if (current_process == parent_process) {
+        uint32_t esp, ebp;
+        asm volatile ("mov %%esp, %0" : "=r" (esp));
+        asm volatile ("mov %%ebp, %0" : "=r" (ebp));
 
         //copy the stack from the current process and update pointers
         uint32_t old_stack_offset = parent_process->stack_pos - esp;
 
         //copy all pages
-        for (uint32_t i = 0; i < old_stack_offset; i += 0x1000) {
-            uint32_t phys = virt_to_phys(parent_process->stack_pos - old_stack_offset + i, current_pd);
-            uint32_t new_phys = virt_to_phys(new_process->stack_pos - old_stack_offset + i, new_process->pd);
+        uint32_t smaller_stack = (current_process->stack_size < new_process->stack_size) ? current_process->stack_size : new_process->stack_size;
+
+        for (uint32_t i = 0; i < smaller_stack; i += 0x1000) {
+            uint32_t phys = virt_to_phys(parent_process->stack_pos - i - 0x1000, parent_process->pd);
+            uint32_t new_phys = virt_to_phys(new_process->stack_pos - i - 0x1000, new_process->pd);
             phys_copypage(phys, new_phys);
         }
 
         new_process->esp = new_process->stack_pos - old_stack_offset;
         new_process->ebp = new_process->esp + (ebp - esp);
 
+        serial_printf("**** PARENT esp: 0x%x ****\n", esp);
+        for (uint32_t i = 0; i < 11; i++) {
+            serial_printf("0x%x: 0x%x%s\n", virt_to_phys(esp + ((i - 5) * 4), current_pd) + ((esp + ((i - 5) * 4)) & 0xFFF), *(uint32_t *)(esp + ((i - 5) * 4)), (esp + ((i - 5) * 4) == esp) ? " <" : "");
+        }
+
+        serial_printf("**** CHILD esp: 0x%x ****\n", new_process->esp);
+        //we will need to convert esp to phys, then use read_phys_byte to get each byte of the uint32
+        for (uint32_t i = 0; i < 11; i++) {
+            uint32_t phys = virt_to_phys(new_process->esp + ((i - 5) * 4), new_process->pd) + ((new_process->esp + ((i - 5) * 4)) & 0xFFF);
+            uint32_t val = (read_phys_byte(phys)) | (read_phys_byte(phys + 1) << 8) | (read_phys_byte(phys + 2) << 16) | (read_phys_byte(phys + 3) << 24);
+            serial_printf("0x%x: 0x%x%s\n", phys, val, (new_process->esp + ((i - 5) * 4) == new_process->esp) ? " <" : "");
+        }
+
         new_process->entry_or_return = eip;
+
         asm volatile ("sti");
         return new_process->pid;
     } else {
+        //oops, something's wrong.
+        //print the values on the stack around the current esp
+        uint32_t esp;
+        asm volatile ("mov %%esp, %0" : "=r" (esp));
+        serial_printf("**** CHILD (FORKED) esp: 0x%x ****\n", esp);
+        for (uint32_t i = 0; i < 11; i++) {
+            serial_printf("0x%x: 0x%x%s\n", virt_to_phys(esp + ((i - 5) * 4), current_pd) + ((esp + ((i - 5) * 4)) & 0xFFF), *(uint32_t *)(esp + ((i - 5) * 4)), (esp + ((i - 5) * 4) == esp) ? " <" : "");
+        }
+
+        //read the return address from the stack
+        uint32_t return_address = *(uint32_t *)(esp + 4);
+        kassert(return_address != NULL);
+
         asm volatile ("sti");
         return 0;
     }
 }
 
 void free_process(process_t *process) {
-    process_t *current_process = head_process;
-    while (current_process->next != process) {
-        current_process = current_process->next;
+    process_t *curr_process = head_process;
+    while (curr_process->next != process) {
+        curr_process = curr_process->next;
     }
-    current_process->next = process->next;
+    curr_process->next = process->next;
 
     //close all file descriptors
     for (int i = 0; i < 256; i++) {
@@ -232,7 +259,8 @@ void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
 
     current_process = new_process;
 
-    serial_printf("pswitch %d -> %d\n", old_process->pid, new_process->pid);
+    terminal_printf("pswitch %d -> %d\n", old_process->pid, new_process->pid);
+    terminal_printf("New stack physLoc: 0x%x\n", virt_to_phys(new_process->stack_pos - 0x1000, new_process->pd));
 
 	if (new_process->status == TASK_STATUS_INITIALIZED)
 	{
@@ -306,6 +334,12 @@ void timer_interrupt_handler(uint32_t ebp, uint32_t esp)
         asm volatile ("mov %0, %%cr3" : : "r" (new_process->pd->phys_addr));
         current_pd = new_process->pd;
 
+        //print out 11 values around the esp
+        serial_printf("**** SCHEDULE esp (%d): 0x%x ****\n", new_process->pid, new_process->esp);
+        for (uint32_t i = 0; i < 11; i++) {
+            serial_printf("0x%x: 0x%x%s\n", virt_to_phys(new_process->esp + ((i - 5) * 4), new_process->pd) + ((new_process->esp + ((i - 5) * 4)) & 0xFFF), *(uint32_t *)(new_process->esp + ((i - 5) * 4)), (new_process->esp + ((i - 5) * 4) == new_process->esp) ? " <" : "");
+        }
+
         new_process->status = TASK_STATUS_RUNNING;
         asm volatile ("mov %0, %%esp" : : "r" (new_process->esp));
         asm volatile ("mov %0, %%ebp" : : "r" (new_process->ebp));
@@ -367,10 +401,13 @@ process_t *process_load_elf(char *path) {
 	}
 	kfree(elfbuf);
 
-
     process_t *new_process = create_task((void *)loaded.entry_point, 0x1000, loaded.pd, 2, test_argv, NULL);
 
     asm volatile ("sti");
     
     return new_process;
+}
+
+uint32_t getpid() {
+    return current_process->pid;
 }

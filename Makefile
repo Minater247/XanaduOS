@@ -86,6 +86,11 @@ qdbg: debug_iso
 debug_term:
 	gdb -ex "target remote localhost:1234" -ex "symbol-file kernel.bin" -ex "target remote localhost:1234"
 
+qdbg_term: debug_iso
+# Start both qemu and gdb like qdbg and debug_term, but redirect terminal to gdb instead of qemu
+	qemu-system-i386 -cdrom os_dbg.iso -s -S -monitor stdio -d int -D ./q_debug.log -serial file:serial.out &
+	gdb -ex "target remote localhost:1234" -ex "symbol-file kernel.bin" -ex "target remote localhost:1234"
+
 clean:
 	@rm -f $(OBJ) $(OBJ_DEBUG) kernel.bin os.iso os_dbg.iso *.o
 

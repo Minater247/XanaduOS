@@ -226,9 +226,14 @@ void phys_copypage(uint32_t src, uint32_t dest) {
     ((page_table_t *)current_pd->virt[0x3FF])->pt_entry[1022] = (src & 0xFFFFF000) | 0x3;
     ((page_table_t *)current_pd->virt[0x3FF])->pt_entry[1023] = (dest & 0xFFFFF000) | 0x3;
     
-    memcpy((void *)0xFFFFF000, (void *)0xFFFFE000, 4096);
+    memcpy((void *)0xFFFFF000, (void *)0xFFFFE000, 0x1000);
 }
 
+
+uint8_t read_phys_byte(uint32_t phys) {
+    ((page_table_t *)current_pd->virt[0x3FF])->pt_entry[1022] = (phys & 0xFFFFF000) | 0x3;
+    return *((uint8_t *)0xFFFFF000 + (phys & 0xFFF));
+}
 
 page_directory_t *clone_page_directory(page_directory_t *directory) {
     uint32_t phys;
@@ -470,6 +475,21 @@ void heap_dump()
         serial_printf("@ 0x%x, length: %x, free: %s\n", header, header->length, header->free ? "true" : "false");
         serial_printf("Contents: 0x%x\n", *(uint32_t *)((uint32_t)header + sizeof(heap_header_t)));
         serial_printf("Next: 0x%x\n", header->next);
+    }
+}
+
+void serial_dump_page_directory(page_directory_t *pd) {
+    //pretty-print the page directory
+    serial_printf("******** Page directory at 0x%x ********\n", pd);
+    for (uint32_t i = 0; i < 1024; i++) {
+        if (pd->virt[i] != 0 && i != 0x300 && i != 0x301) {
+            serial_printf("Table 0x%x: 0x%x\n", i, pd->virt[i]);
+            for (uint32_t j = 0; j < 1024; j++) {
+                if (((page_table_t *)pd->virt[i])->pt_entry[j] & 0x1) {
+                    serial_printf("    Entry 0x%x: 0x%x -> 0x%x\n", j, i * 0x400000 + j * 0x1000, ((page_table_t *)pd->virt[i])->pt_entry[j] & 0xFFFFF000);
+                }
+            }
+        }
     }
 }
 

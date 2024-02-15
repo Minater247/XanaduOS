@@ -213,7 +213,7 @@ file_descriptor_t *fopen(char *path, char *flags) {
     int len;
     while (cur_mount_point != NULL) {
         len = strlen(cur_mount_point->path);
-        if (!strncmp(path, cur_mount_point->path, len - 1)) { //len by itself causes a #GP for... some reason. (check on this if it becomes a problem)
+        if (!strncmp(path, cur_mount_point->path, len)) {
             path += len;
             break;
         }

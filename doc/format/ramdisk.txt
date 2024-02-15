@@ -1,0 +1,72 @@
+This document specifies the memory format used for memory-based uncompressed filesystems in XanaduOS.
+This revision is current as of writing (1/9/24), but may be revised in the future. Please check the
+repository for the current revision at __LINK HERE__
+
+
+The initial filesystem is accessible through the multiboot modules, and is denoted by the string "RAMDISK".
+This may change to accomodate filesystem load types and flags in the future, but the first 7 characters
+will always be RAMDISK.
+
+
+# Section 1: Overview - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+The filesystem, as stored in memory, is structured as follows:
+- Size and Structure Information
+- File and Directory Headers
+- File Data
+
+All information within the first two sections is assumed to be little endian. File data is not governed by
+this standard, and may be any format or size.
+
+The filesystem as a whole will be padded to the closest multiple of 4096 bytes in order to remain page-
+aligned. It may not be assumed, however, that the data in this sector will contain zeroes at
+runtime, and implementations should limit reads only to the length defined in the file's corresponding
+header.
+
+# Section 2: Size and Structure - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+A small section of data precedes the file and directory structure,
+consisting of 3 32-bit entries. These are as follows:
+
+--------------------------------
+0   ramdisk size in bytes      -
+--------------------------------
+4   number of files contained  -
+--------------------------------
+8   length of header section   -
+--------------------------------
+12  number of entries in root  -
+--------------------------------
+
+# Section 3: File and Directory Headers - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+File and Directory headers follow a similar structure, both comprising 80 bytes. The first 2 bytes denote
+the type of header used. Available markers are FILE_ENTRY (0xBAE7) and DIR_ENTRY (0x7EAB). The following
+are the organizations of valid File and Directory headers:
+
+File Header:
+--------------------------------
+0   FILE_ENTRY                 -
+--------------------------------
+2   File Offset                -
+--------------------------------
+6   File Name                  -
+--------------------------------
+70  File Length                -
+--------------------------------
+74  Reserved                   -
+--------------------------------
+
+Directory Header:
+--------------------------------
+0   DIR_ENTRY                  -
+--------------------------------
+2   Num. Files Contained       -
+--------------------------------
+6   Directory Name             -
+--------------------------------
+70  Num of Headers Contained   -
+--------------------------------
+74  Reserved                   -
+--------------------------------
+
+Names may be a maximum of 63 printable characters, terminated by a NUL character ('\0'). The offset given
+in the "File Offset" sector of a File header originates from the end of the header list, *not* from the
+beginning of the filesystem.
